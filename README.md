@@ -4,7 +4,7 @@
 The API that powers WeaverFi.
 
 ![CodeQL](https://github.com/CookieTrack-io/weaverfi-api/actions/workflows/codeql-analysis.yml/badge.svg)
-![Version](https://img.shields.io/github/package-json/v/CookieTrack-io/weaverfi-api/functions)
+![Version](https://img.shields.io/github/package-json/v/CookieTrack-io/weaverfi-api)
 
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
