@@ -1,0 +1,40 @@
+![WeaverFi Logo][logo]
+# WeaverFi API
+
+The API that powers WeaverFi.
+
+![CodeQL](https://github.com/CookieTrack-io/weaverfi-api/actions/workflows/codeql-analysis.yml/badge.svg)
+![Version](https://img.shields.io/github/package-json/v/CookieTrack-io/weaverfi-api/functions)
+
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB)
+![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase)
+
+![Twitter Shield](https://img.shields.io/twitter/follow/cookietrack_io?style=social)
+
+---
+
+## Documentation
+
+WeaverFi's OpenAPI documentation can be found [here](https://api.weaver.fi/docs).
+
+---
+
+## Contributing
+
+Contribution guidelines can be found [here](CONTRIBUTING.md).
+
+---
+
+## Self-Hosting
+
+This repository is already setup for Firebase hosting, but could easily be adapted to be deployed on AWS or any other cloud deployment service.
+
+1. Add your own API keys in `functions/static/keys.json`. An example file is provided.
+
+2. Install dependencies by navigating to the `functions` folder and using `npm i`.
+
+3. Deploying to Firebase can be done through `firebase deploy`.
+
+[logo]: https://github.com/CookieTrack-io/weaverfi-api/blob/master/favicon.svg "WeaverFi"
