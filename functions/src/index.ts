@@ -120,7 +120,7 @@ weaver.getAllChains().forEach(chain => {
     let decimals = req.query.decimals ? parseInt(req.query.decimals as string) : undefined;
     if(address) {
       try {
-        if(chain === 'TERRA' && address.startsWith('terra1')) {
+        if(chain === 'TERRA' && weaver[chain].isAddress(address as TerraAddress)) {
           res.end(JSON.stringify(await weaver[chain].getTokenPrice(address as TerraAddress, decimals), null, ' '));
         } else if(address.startsWith('0x')) {
           res.end(JSON.stringify(await weaver[chain].getTokenPrice(address as Address, decimals), null, ' '));
@@ -141,9 +141,9 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        if(chain === 'TERRA' && weaver.TERRA.isWallet(address as TerraAddress)) {
+        if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           res.end(JSON.stringify(await weaver[chain].getWalletBalance(address as TerraAddress), null, ' '));
-        } else if(chain != 'TERRA' && address.startsWith('0x') && address.length === 42) {
+        } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
           res.end(JSON.stringify(await weaver[chain].getWalletBalance(address as Address), null, ' '));
         } else {
           res.send(invalidAddressErrorResponse);
@@ -160,15 +160,15 @@ weaver.getAllChains().forEach(chain => {
   // Project Balance Endpoint:
   api.get(`/${chain.toLowerCase()}/project`, async (req: Request, res: Response) => {
     let project = req.query.name as string | undefined;
-    let wallet = req.query.address as string | undefined;
+    let address = req.query.address as string | undefined;
     if(project) {
       if(weaver[chain].getProjects().includes(project)) {
-        if(wallet) {
+        if(address) {
           try {
-            if(chain === 'TERRA' && weaver.TERRA.isWallet(wallet as TerraAddress)) {
-              res.end(JSON.stringify(await weaver[chain].getProjectBalance(wallet as TerraAddress, project), null, ' '));
-            } else if(chain != 'TERRA' && wallet.startsWith('0x') && wallet.length === 42) {
-              res.end(JSON.stringify(await weaver[chain].getProjectBalance(wallet as Address, project), null, ' '));
+            if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
+              res.end(JSON.stringify(await weaver[chain].getProjectBalance(address as TerraAddress, project), null, ' '));
+            } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
+              res.end(JSON.stringify(await weaver[chain].getProjectBalance(address as Address, project), null, ' '));
             } else {
               res.send(invalidAddressErrorResponse);
             }

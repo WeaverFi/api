@@ -2,3 +2,4 @@
 firebase-debug.log
 ui-debug.log
 .firebaserc
+.firebase/
