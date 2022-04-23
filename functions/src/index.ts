@@ -8,9 +8,9 @@ const cors = require('cors');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError } from './functions';
+import { sendError, getTXs } from './functions';
 import type { Request, Response, Application } from 'express';
-import type { URL, Address, TerraAddress } from 'weaverfi/dist/types';
+import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
 // Fetching Required JSON Files:
 // const swaggerDocs: JSON = require('../static/swagger.json'); // <TODO>
@@ -30,7 +30,7 @@ const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // Settings:
-const localTesting: boolean = true;
+const localTesting: boolean = false;
 const localTestingPort: number = 3000;
 
 /* ========================================================================================================================================================================= */
@@ -47,7 +47,7 @@ api.get('/', (req: Request, res: Response) => {
 
 // Chain List Endpoint:
 api.get('/chains', (req: Request, res: Response) => {
-  res.end(JSON.stringify(weaver.getAllChains().map(chain => chain.toLowerCase()), null, ' '));
+  res.end(JSON.stringify(weaver.getAllChainInfo(), null, ' '));
 });
 
 // Project List Endpoint:
@@ -86,6 +86,11 @@ api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
 
 // Chain-Specific Endpoints:
 weaver.getAllChains().forEach(chain => {
+
+  // Chain Info Endpoint:
+  api.get(`/${chain.toLowerCase()}/info`, (req: Request, res: Response) => {
+    res.status(200).end(JSON.stringify(weaver[chain].getInfo(), null, ' '));
+  });
 
   // Project List Endpoint:
   api.get(`/${chain.toLowerCase()}/projects`, (req: Request, res: Response) => {
@@ -186,9 +191,9 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
-          // <TODO>
+          sendError('routeError', res);
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-          // <TODO>
+          res.status(200).end(JSON.stringify(await getTXs(chain.toLowerCase() as EVMChain, address as Address), null, ' '));
         } else {
           sendError('invalidAddress', res);
         }
