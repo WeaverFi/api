@@ -24,6 +24,7 @@ admin.initializeApp();
 // Initializing Express Server:
 const api: Application = express();
 api.use(cors());
+api.use(express.static('functions/static'));
 
 // Initializations:
 const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
@@ -42,9 +43,6 @@ api.get('/', (req: Request, res: Response) => {
 
 // Swagger Documentation Endpoint:
 // api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
-
-// Favicon Service:
-api.use('/favicon.ico', express.static('functions/static/weaverfi.ico'));
 
 // Logging Middleware:
 api.use((req: Request, res: Response, next: NextFunction) => {

@@ -2,7 +2,7 @@
 // Imports:
 import axios from 'axios';
 import weaver from 'weaverfi';
-import keys from '../static/keys.json';
+import keys from './keys.json';
 import type { Response } from 'express';
 import type { ErrorResponseType } from './types';
 import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken } from 'weaverfi/dist/types';

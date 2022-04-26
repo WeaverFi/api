@@ -1,4 +1,4 @@
 node_modules/
 lib/
 package-lock.json
-static/keys.json
+keys.json

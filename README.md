@@ -31,10 +31,10 @@ Contribution guidelines can be found [here](CONTRIBUTING.md).
 
 This repository is already setup for Firebase hosting, but could easily be adapted to be deployed on AWS or any other cloud deployment service.
 
-1. Add your own API keys in `functions/static/keys.json`. An example file is provided.
+1. Add your own API keys in `functions/keys.json`. An example file is provided.
 
 2. Install dependencies by navigating to the `functions` folder and using `npm i`.
 
 3. Deploying to Firebase can be done through `firebase deploy`.
 
-[logo]: /functions/static/weaverfi.ico "WeaverFi"
+[logo]: /functions/static/favicon.ico "WeaverFi"
