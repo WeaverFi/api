@@ -37,4 +37,4 @@ This repository is already setup for Firebase hosting, but could easily be adapt
 
 3. Deploying to Firebase can be done through `firebase deploy`.
 
-[logo]: https://github.com/CookieTrack-io/weaverfi-api/blob/master/favicon.svg "WeaverFi"
+[logo]: /functions/static/weaverfi.ico "WeaverFi"

@@ -9,7 +9,7 @@ const cors = require('cors');
 // Imports:
 import weaver from 'weaverfi';
 import { sendError, getTXs, getFees } from './functions';
-import type { Request, Response, Application } from 'express';
+import type { Application, Request, Response, NextFunction } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
 // Fetching Required JSON Files:
@@ -42,6 +42,17 @@ api.get('/', (req: Request, res: Response) => {
 
 // Swagger Documentation Endpoint:
 // api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
+
+// Favicon Service:
+api.use('/favicon.ico', express.static('functions/static/weaverfi.ico'));
+
+// Logging Middleware:
+api.use((req: Request, res: Response, next: NextFunction) => {
+  if(req.originalUrl != '/service-worker.js') {
+    console.info(`Loading: ${req.originalUrl}`);
+  }
+  next();
+});
 
 /* ========================================================================================================================================================================= */
 
