@@ -1,10 +1,10 @@
 {
   "name": "weaverfi-api",
   "description": "The API that powers WeaverFi.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "scripts": {
     "build": "cd functions && npm run build",
-    "start": "npm run build && node functions/lib/index.js"
+    "start": "npm run build && node functions/lib/src/index.js"
   },
   "dependencies": {}
 }

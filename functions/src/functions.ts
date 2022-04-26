@@ -5,7 +5,7 @@ import weaver from 'weaverfi';
 import keys from '../static/keys.json';
 import type { Response } from 'express';
 import type { ErrorResponseType } from './types';
-import type { Address, Chain, EVMChain, UpperCaseChain, TransferTX, ApprovalTX, Hash, TXToken } from 'weaverfi/dist/types';
+import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken } from 'weaverfi/dist/types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -23,6 +23,23 @@ export const sendError = (responseType: ErrorResponseType, res: Response) => {
 export const getTXs = async (chain: EVMChain, wallet: Address) => {
   let txs = await queryCovalentTXs(chain, wallet);
   return txs.sort((a, b) => a.time - b.time);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to get a wallet's gas fee expenditure:
+export const getFees = async (chain: EVMChain, wallet: Address) => {
+  let fees = { amount: 0, txs: 0, price: 0 };
+  let txs = await queryCovalentSimpleTXs(chain, wallet);
+  txs.forEach(tx => {
+    if(tx.direction === 'out') {
+      fees.amount += tx.fee;
+      fees.txs += 1;
+    }
+  });
+  let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
+  fees.price = await weaver[upperCaseChain].getTokenPrice(defaultAddress);
+  return fees;
 }
 
 /* ========================================================================================================================================================================= */
@@ -45,7 +62,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
         response = (await axios.get(`https://api.covalenthq.com/v1/${fetchChainID(chain)}/address/${wallet}/transactions_v2/?page-size=1000&page-number=${page++}&key=${keys.ckey}`)).data;
         if(!response.error) {
           hasNextPage = response.data.pagination.has_more;
-          let promises = response.data.items.map((tx: any) => (async () => {
+          response.data.items.forEach((tx: any) => {
             if(tx.successful) {
 
               // Setting Basic Info:
@@ -74,7 +91,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                   let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
                   txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
                 }
-    
+
               // Approval TXs:
               } else if(tx.log_events.length < 3) {
                 tx.log_events.forEach((event: any) => {
@@ -89,24 +106,24 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                   }
                 });
               }
-    
+
               // Other TXs:
-              let log_promises = tx.log_events.map((event: any) => (async () => {
+              tx.log_events.forEach((event: any) => {
                 if(event.decoded != null) {
-    
+
                   // Token Transfers:
                   if(event.decoded.name === 'Transfer') {
                     if(!isBlacklisted(chain, event.sender_address) && event.sender_contract_ticker_symbol != null && parseInt(event.decoded.params[2].value) > 0) {
                       let symbol = event.sender_contract_ticker_symbol;
                       let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
                       let value = parseInt(event.decoded.params[2].value) / (10 ** event.sender_contract_decimals);
-    
+
                       // Outbound:
                       if(event.decoded.params[0].name === 'from' && event.decoded.params[0].value === wallet && event.decoded.params[2].decoded) {
                         let from: Address = wallet;
                         let to: Address = event.decoded.params[1].value;
                         txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'out', from, to, token, value, fee, nativeToken });
-                      
+
                       // Inbound:
                       } else if(event.decoded.params[1].name === 'to' && event.decoded.params[1].value === wallet && event.decoded.params[2].decoded) {
                         let from: Address = event.decoded.params[0].value;
@@ -114,7 +131,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                         txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
                       }
                     }
-                  
+
                   // Native Router Swaps:
                   } else if(event.decoded.name === 'Withdrawal' && event.decoded.params[0].value === tx.to_address) {
                     let from: Address = tx.to_address;
@@ -124,7 +141,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                     if(nullEvent) {
                       if(!nullEventNativeSwapTXs.includes(nullEvent.tx_hash)) {
                         nullEventNativeSwapTXs.push(nullEvent.tx_hash);
-    
+                        
                         // ParaSwap TXs:
                         if(nullEvent.raw_log_topics[0] === '0x680ad12fcfabafe9b1f08214caef968eb651cf010bee4a2824adfaec965903e8' && nullEvent.raw_log_topics[3].endsWith('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')) {
                           let value = ((parseInt(nullEvent.raw_log_data.slice(194, 258), 16) + parseInt(nullEvent.raw_log_data.slice(258, 322), 16)) / 2) / (10 ** 18);
@@ -137,11 +154,49 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                     }
                   }
                 }
-              })());
-              await Promise.all(log_promises);
+              });
             }
-          })());
-          await Promise.all(promises);
+          });
+        } else {
+          hasNextPage = false;
+        }
+      } catch(err: any) {
+        if(++errors > 2) {
+          console.error(`Covalent API Error: ${err.response.status}`);
+        }
+        hasNextPage = false;
+      }
+    }
+  } while(hasNextPage);
+  return txs;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to query wallet transactions with no logs from Covalent:
+const queryCovalentSimpleTXs = async (chain: EVMChain, wallet: Address) => {
+
+  // Initializations:
+  let txs: SimpleTX[] = [];
+  let hasNextPage = false;
+  let page = 0;
+
+  // Fetching Covalent API Data:
+  do {
+    let response;
+    let errors = 0;
+    while(!response && errors < 3) {
+      try {
+        response = (await axios.get(`https://api.covalenthq.com/v1/${fetchChainID(chain)}/address/${wallet}/transactions_v2/?no-logs=true&page-size=1000&page-number=${page++}&key=${keys.ckey}`)).data;
+        if(!response.error) {
+          hasNextPage = response.data.pagination.has_more;
+          response.data.items.forEach((tx: any) => {
+            wallet = wallet.toLowerCase() as Address;
+            let hash = tx.tx_hash;
+            let time = (new Date(tx.block_signed_at)).getTime() / 1000;
+            let fee = tx.gas_price < 10000000000000 ? (tx.gas_spent * tx.gas_price) / (10 ** 18) : tx.gas_price / (10 ** 18); // Workaround regarding Covalent gas pricing bugs.
+            txs.push({ wallet, chain, hash, time, direction: tx.from_address === wallet ? 'out' : 'in', fee });
+          });
         } else {
           hasNextPage = false;
         }

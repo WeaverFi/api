@@ -8,7 +8,7 @@ const cors = require('cors');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError, getTXs } from './functions';
+import { sendError, getTXs, getFees } from './functions';
 import type { Request, Response, Application } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
@@ -191,7 +191,7 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
-          sendError('routeError', res);
+          sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
           res.status(200).end(JSON.stringify(await getTXs(chain.toLowerCase() as EVMChain, address as Address), null, ' '));
         } else {
@@ -212,9 +212,9 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
-          // <TODO>
+          sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-          // <TODO>
+          res.status(200).end(JSON.stringify(await getFees(chain.toLowerCase() as EVMChain, address as Address), null, ' '));
         } else {
           sendError('invalidAddress', res);
         }
