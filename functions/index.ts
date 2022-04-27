@@ -33,6 +33,8 @@ const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}
 // Settings:
 const localTesting: boolean = false;
 const localTestingPort: number = 3000;
+const priceFetcher: boolean = true;
+const priceFetcherFrequencyInMinutes: number = 20;
 
 /* ========================================================================================================================================================================= */
 
@@ -246,11 +248,25 @@ api.all('*', async (req: Request, res: Response) => {
 
 /* ========================================================================================================================================================================= */
 
-// Local Testing:
+// Local Development:
 if(localTesting) {
   api.listen(localTestingPort, () => { console.info(`API Up on http://127.0.0.1:${localTestingPort}`); });
 
-// Exporting Firebase API Function:
+// Production Deployment:
 } else {
+  
+  // Exporting Firebase API Function:
   exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 120 }).https.onRequest(api);
+  
+  // Exporting Firebase Price Fetcher Scheduled Function:
+  if(priceFetcher) {
+    exports.priceFetcher = functions.pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
+      let prices = await weaver.getAllTokenPrices();
+      let timestamp = Date.now();
+      let docRef = admin.firestore().collection('prices').doc(`${timestamp}`);
+      await docRef.set({ prices });
+      console.info(`PriceFetcher: Fetched token prices at timestamp: ${timestamp}`);
+      return null;
+    });
+  }
 }
