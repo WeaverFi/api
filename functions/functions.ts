@@ -5,7 +5,7 @@ import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Response } from 'express';
 import type { ErrorResponseType } from './types';
-import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken } from 'weaverfi/dist/types';
+import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -40,6 +40,45 @@ export const getFees = async (chain: EVMChain, wallet: Address) => {
   let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
   fees.price = await weaver[upperCaseChain].getTokenPrice(defaultAddress);
   return fees;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch native token prices from database:
+export const fetchNativeTokenPricesDB = async (admin: any) => {
+  let prices = await fetchTokenPricesDB(admin);
+  Object.keys(prices).forEach(stringChain => {
+    let chain = stringChain as Chain;
+    let nativeTokenPriceData = prices[chain].filter(token => token.address.startsWith(defaultAddress));
+    prices[chain] = nativeTokenPriceData;
+  });
+  return prices;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch token prices from database:
+export const fetchTokenPricesDB = async (admin: any) => {
+  let colRef = admin.firestore().collection('prices');
+  let prices: Record<Chain, TokenPriceData[]> = await colRef.orderBy(admin.firestore.FieldPath.documentId(), 'desc').limit(1).get(); // <TODO> not working
+  Object.keys(prices).forEach(stringChain => {
+    let chain = stringChain as Chain;
+    let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
+    prices[chain].forEach(tokenPriceData => {
+      weaver[upperCaseChain].updateTokenPrice(tokenPriceData);
+    });
+  });
+  return weaver.fetchPrices() as Record<Chain, TokenPriceData[]>;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to update database with fetched token prices:
+export const updateTokenPricesDB = async (db: any, prices: Record<Chain, TokenPriceData[]>) => {
+  let timestamp = Date.now();
+  let docRef = db.collection('prices').doc(`${timestamp}`);
+  await docRef.set({ prices });
+  return timestamp;
 }
 
 /* ========================================================================================================================================================================= */

@@ -8,7 +8,7 @@ const cors = require('cors');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError, getTXs, getFees } from './functions';
+import { sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, updateTokenPricesDB } from './functions';
 import type { Application, Request, Response, NextFunction } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
@@ -76,7 +76,11 @@ api.get('/tokens', (req: Request, res: Response) => {
 // All Token Prices Endpoint:
 api.get('/tokenPrices', async (req: Request, res: Response) => {
   try {
-    res.status(200).end(JSON.stringify(await weaver.getAllTokenPrices(), null, ' '));
+    if(!localTesting && priceFetcher) {
+      res.status(200).end(JSON.stringify(await fetchTokenPricesDB(admin), null, ' '));
+    } else {
+      res.status(200).end(JSON.stringify(await weaver.getAllTokenPrices(), null, ' '));
+    }
   } catch(err) {
     console.error(err);
     sendError('internalError', res);
@@ -86,7 +90,11 @@ api.get('/tokenPrices', async (req: Request, res: Response) => {
 // Native Token Prices Endpoint:
 api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
   try {
-    res.status(200).end(JSON.stringify(await weaver.getNativeTokenPrices(), null, ' '));
+    if(!localTesting && priceFetcher) {
+      res.status(200).end(JSON.stringify(await fetchNativeTokenPricesDB(admin), null, ' '));
+    } else {
+      res.status(200).end(JSON.stringify(await weaver.getNativeTokenPrices(), null, ' '));
+    }
   } catch(err) {
     console.error(err);
     sendError('internalError', res);
@@ -116,7 +124,11 @@ weaver.getAllChains().forEach(chain => {
   // Token Prices Endpoint:
   api.get(`/${chain.toLowerCase()}/tokenPrices`, async (req: Request, res: Response) => {
     try {
-      res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' '));
+      if(!localTesting && priceFetcher) {
+        res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' ')); // <TODO> change to chain-specific token prices from db, similarly to above functions
+      } else {
+        res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' '));
+      }
     } catch(err) {
       console.error(err);
       sendError('internalError', res);
@@ -129,6 +141,7 @@ weaver.getAllChains().forEach(chain => {
     let decimals = req.query.decimals ? parseInt(req.query.decimals as string) : undefined;
     if(address) {
       try {
+        // <TODO> add check for localtesting and pricefetcher and redirect to query from db instead if available (need to check for individual token)
         if(chain === 'TERRA' && weaver[chain].isAddress(address as TerraAddress)) {
           res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as TerraAddress, decimals), null, ' '));
         } else if(address.startsWith('0x')) {
@@ -150,6 +163,7 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
+        // <TODO> add check for localtesting and pricefetcher and query db for prices before attempting to get wallet balances (make sure it is actually using the queried prices from sdk)
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           res.status(200).end(JSON.stringify(await weaver[chain].getWalletBalance(address as TerraAddress), null, ' '));
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -174,6 +188,7 @@ weaver.getAllChains().forEach(chain => {
       if(weaver[chain].getProjects().includes(project)) {
         if(address) {
           try {
+            // <TODO> add check for localtesting and pricefetcher and query db for prices before attempting to get project balances (make sure it is actually using the queried prices from sdk)
             if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
               res.status(200).end(JSON.stringify(await weaver[chain].getProjectBalance(address as TerraAddress, project), null, ' '));
             } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -262,9 +277,7 @@ if(localTesting) {
   if(priceFetcher) {
     exports.priceFetcher = functions.pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
       let prices = await weaver.getAllTokenPrices();
-      let timestamp = Date.now();
-      let docRef = admin.firestore().collection('prices').doc(`${timestamp}`);
-      await docRef.set({ prices });
+      let timestamp = await updateTokenPricesDB(admin.firestore(), prices);
       console.info(`PriceFetcher: Fetched token prices at timestamp: ${timestamp}`);
       return null;
     });
