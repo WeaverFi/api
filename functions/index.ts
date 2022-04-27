@@ -288,7 +288,7 @@ if(localTesting) {
     exports.priceFetcher = functions.pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
       let prices = await weaver.getAllTokenPrices();
       let timestamp = await updateTokenPricesDB(admin.firestore(), prices);
-      console.info(`PriceFetcher: Fetched token prices at timestamp: ${timestamp}`);
+      console.info(`Fetched token prices at timestamp: ${timestamp}`);
       return null;
     });
   }
