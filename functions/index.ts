@@ -8,7 +8,7 @@ const cors = require('cors');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, updateTokenPricesDB } from './functions';
+import { sendError, getTXs, getFees, updateTokenPricesDB, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
 import type { Application, Request, Response, NextFunction } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
@@ -125,7 +125,7 @@ weaver.getAllChains().forEach(chain => {
   api.get(`/${chain.toLowerCase()}/tokenPrices`, async (req: Request, res: Response) => {
     try {
       if(!localTesting && priceFetcher) {
-        res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' ')); // <TODO> change to chain-specific token prices from db, similarly to above functions
+        res.status(200).end(JSON.stringify(await fetchChainTokenPricesDB(admin, chain), null, ' '));
       } else {
         res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' '));
       }
@@ -141,13 +141,22 @@ weaver.getAllChains().forEach(chain => {
     let decimals = req.query.decimals ? parseInt(req.query.decimals as string) : undefined;
     if(address) {
       try {
-        // <TODO> add check for localtesting and pricefetcher and redirect to query from db instead if available (need to check for individual token)
-        if(chain === 'TERRA' && weaver[chain].isAddress(address as TerraAddress)) {
-          res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as TerraAddress, decimals), null, ' '));
-        } else if(address.startsWith('0x')) {
-          res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as Address, decimals), null, ' '));
-        } else {
-          sendError('invalidAddress', res);
+        let priceFound = false;
+        if(!localTesting && priceFetcher) {
+          let tokenPrice = await fetchTokenPriceDB(admin, chain, address);
+          if(tokenPrice) {
+            priceFound = true;
+            res.status(200).end(JSON.stringify(tokenPrice, null, ' '));
+          }
+        }
+        if(!priceFound) {
+          if(chain === 'TERRA' && weaver[chain].isAddress(address as TerraAddress)) {
+            res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as TerraAddress, decimals), null, ' '));
+          } else if(address.startsWith('0x')) {
+            res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as Address, decimals), null, ' '));
+          } else {
+            sendError('invalidAddress', res);
+          }
         }
       } catch(err) {
         console.error(err);
@@ -163,7 +172,7 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        // <TODO> add check for localtesting and pricefetcher and query db for prices before attempting to get wallet balances (make sure it is actually using the queried prices from sdk)
+        if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           res.status(200).end(JSON.stringify(await weaver[chain].getWalletBalance(address as TerraAddress), null, ' '));
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -188,7 +197,7 @@ weaver.getAllChains().forEach(chain => {
       if(weaver[chain].getProjects().includes(project)) {
         if(address) {
           try {
-            // <TODO> add check for localtesting and pricefetcher and query db for prices before attempting to get project balances (make sure it is actually using the queried prices from sdk)
+            if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
             if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
               res.status(200).end(JSON.stringify(await weaver[chain].getProjectBalance(address as TerraAddress, project), null, ' '));
             } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -237,6 +246,7 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
+        if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {

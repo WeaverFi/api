@@ -46,38 +46,63 @@ export const getFees = async (chain: EVMChain, wallet: Address) => {
 
 // Function to fetch native token prices from database:
 export const fetchNativeTokenPricesDB = async (admin: any) => {
-  let prices = await fetchTokenPricesDB(admin);
-  Object.keys(prices).forEach(stringChain => {
+  let priceData = await fetchTokenPricesDB(admin);
+  Object.keys(priceData).forEach(stringChain => {
     let chain = stringChain as Chain;
-    let nativeTokenPriceData = prices[chain].filter(token => token.address.startsWith(defaultAddress));
-    prices[chain] = nativeTokenPriceData;
+    let nativeTokenPriceData = priceData[chain].filter(token => token.address.startsWith(defaultAddress));
+    priceData[chain] = nativeTokenPriceData;
   });
-  return prices;
+  return priceData;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch a chain's token prices from database:
+export const fetchChainTokenPricesDB = async (admin: any, chain: UpperCaseChain) => {
+  let priceData = await fetchTokenPricesDB(admin);
+  return priceData[chain.toLowerCase() as Chain];
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch one token's price from database:
+export const fetchTokenPriceDB = async (admin: any, chain: UpperCaseChain, address: string) => {
+  let priceData = await fetchTokenPricesDB(admin);
+  let tokenPriceData = priceData[chain.toLowerCase() as Chain].find(token => token.address === address.toLowerCase());
+  if(tokenPriceData) {
+    return tokenPriceData.price;
+  } else {
+    return null;
+  }
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to fetch token prices from database:
 export const fetchTokenPricesDB = async (admin: any) => {
-  let colRef = admin.firestore().collection('prices');
-  let prices: Record<Chain, TokenPriceData[]> = await colRef.orderBy(admin.firestore.FieldPath.documentId(), 'desc').limit(1).get(); // <TODO> not working
-  Object.keys(prices).forEach(stringChain => {
-    let chain = stringChain as Chain;
-    let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-    prices[chain].forEach(tokenPriceData => {
-      weaver[upperCaseChain].updateTokenPrice(tokenPriceData);
+  let pricesRef = admin.firestore().collection('prices');
+  let pricesSnapshot = await pricesRef.orderBy('timestamp', 'desc').limit(1).get();
+  if(!pricesSnapshot.empty) {
+    let latestPrices: { timestamp: number, priceData: Record<Chain, TokenPriceData[]> } = pricesSnapshot.docs[0].data();
+    Object.keys(latestPrices.priceData).forEach(stringChain => {
+      let chain = stringChain as Chain;
+      let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
+      latestPrices.priceData[chain].forEach(tokenPriceData => {
+        weaver[upperCaseChain].updateTokenPrice(tokenPriceData);
+      });
     });
-  });
+  } else {
+    console.error('No token price data found on database.');
+  }
   return weaver.fetchPrices() as Record<Chain, TokenPriceData[]>;
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to update database with fetched token prices:
-export const updateTokenPricesDB = async (db: any, prices: Record<Chain, TokenPriceData[]>) => {
+export const updateTokenPricesDB = async (db: any, priceData: Record<Chain, TokenPriceData[]>) => {
   let timestamp = Date.now();
-  let docRef = db.collection('prices').doc(`${timestamp}`);
-  await docRef.set({ prices });
+  await db.collection('prices').add({ timestamp, priceData });
   return timestamp;
 }
 
