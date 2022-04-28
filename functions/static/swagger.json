@@ -1,0 +1,1093 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
+    "version": "0.7.0",
+    "title": "WeaverFi API",
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/CookieTrack-io/weaverfi-api/blob/master/LICENSE.md"
+    }
+  },
+  "schemes": [
+    "https"
+  ],
+  "host": "api.weaver.fi",
+  "tags": [
+    {
+      "name": "Info",
+      "description": "Query general information about WeaverFi."
+    },
+    {
+      "name": "Prices",
+      "description": "Query pricing data for any DeFi token."
+    },
+    {
+      "name": "Balances",
+      "description": "Query wallet balances on any blockchain."
+    },
+    {
+      "name": "Transactions",
+      "description": "Query transaction data for any wallet, on any blockchain."
+    }
+  ],
+  "paths": {
+    "/chains": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets all blockchains supported by WeaverFi.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/Chains"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets all projects supported by WeaverFi.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/Projects"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/tokens": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets all tokens automatically tracked by WeaverFi.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/Tokens"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/info": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets information regarding any individual blockchain.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/ChainInfo"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/projects": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets projects supported on any individual blockchain.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/ChainProjects"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/tokens": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Gets tokens automatically tracked on any individual blockchain.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/ChainTokens"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/tokenPrices": {
+      "get": {
+        "tags": [
+          "Prices"
+        ],
+        "summary": "Returns pricing information of all tracked tokens.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/TokenPrices"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/nativeTokenPrices": {
+      "get": {
+        "tags": [
+          "Prices"
+        ],
+        "summary": "Returns pricing information of all chain's native tokens.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/TokenPrices"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/tokenPrices": {
+      "get": {
+        "tags": [
+          "Prices"
+        ],
+        "summary": "Returns pricing information of tracked tokens on any individual blockchain.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/ChainTokenPrices"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/tokenPrice": {
+      "get": {
+        "tags": [
+          "Prices"
+        ],
+        "summary": "Returns pricing information of a specific token.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Token address.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "in": "query",
+            "description": "Token decimals.",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/TokenPrice"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/wallet": {
+      "get": {
+        "tags": [
+          "Balances"
+        ],
+        "summary": "Gets token balances in any wallet address.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/WalletTokenBalances"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/project": {
+      "get": {
+        "tags": [
+          "Balances"
+        ],
+        "summary": "Gets staked token balances in any project, by any wallet address.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "terra"
+            ]
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Project name. (See /projects for valid project names)",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/ProjectTokenBalances"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/txs": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Gets a wallet's transaction history.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos"
+            ]
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/TXs"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
+    "/{chain}/fees": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Gets a wallet's gas fee data.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos"
+            ]
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/Fees"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Chains": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "$ref": "#/definitions/ChainInfo"
+        }
+      }
+    },
+    "Projects": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "$ref": "#/definitions/ChainProjects"
+        }
+      }
+    },
+    "Tokens": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "$ref": "#/definitions/ChainTokens"
+        }
+      }
+    },
+    "ChainInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "example": 43114
+        },
+        "token": {
+          "type": "string",
+          "example": "AVAX"
+        },
+        "wrappedToken": {
+          "type": "string",
+          "example": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
+        },
+        "usdc": {
+          "type": "string",
+          "example": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e"
+        },
+        "usdcDecimals": {
+          "type": "integer",
+          "example": 6
+        },
+        "inch": {
+          "type": "boolean",
+          "example": true
+        },
+        "paraswap": {
+          "type": "boolean",
+          "example": true
+        },
+        "rpcs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "https://api.avax.network/ext/bc/C/rpc",
+            "https://avax-mainnet.gateway.pokt.network/v1/lb/605238bf6b986eea7cf36d5e/ext/bc/C/rpc"
+          ]
+        },
+        "coingeckoIDs": {
+          "type": "object",
+          "properties": {
+            "chainID": {
+              "type": "string",
+              "example": "avalanche"
+            },
+            "nativeTokenID": {
+              "type": "string",
+              "example": "avalanche-2"
+            }
+          }
+        }
+      }
+    },
+    "ChainProjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "example": [
+        "aave",
+        "curve",
+        "pooltogether"
+      ]
+    },
+    "ChainTokens": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Token"
+      }
+    },
+    "Token": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "example": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        },
+        "symbol": {
+          "type": "string",
+          "example": "USDC"
+        },
+        "logo": {
+          "type": "string",
+          "example": "https://etherscan.io/token/images/centre-usdc_28.png"
+        },
+        "decimals": {
+          "type": "integer",
+          "example": 6
+        }
+      }
+    },
+    "TokenPrices": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "$ref": "#/definitions/ChainTokenPrices"
+        }
+      }
+    },
+    "ChainTokenPrices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TokenPriceData"
+      }
+    },
+    "TokenPriceData": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "integer",
+          "example": 2890.76
+        },
+        "address": {
+          "type": "string",
+          "example": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "symbol": {
+          "type": "string",
+          "example": "ETH"
+        },
+        "timestamp": {
+          "type": "integer",
+          "example": 1651113004458
+        },
+        "source": {
+          "type": "string",
+          "example": "coingecko"
+        }
+      }
+    },
+    "TokenPrice": {
+      "type": "integer",
+      "example": 2890.76
+    },
+    "WalletTokenBalances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "nativeToken"
+          },
+          "chain": {
+            "type": "string",
+            "example": "eth"
+          },
+          "location": {
+            "type": "string",
+            "example": "wallet"
+          },
+          "status": {
+            "type": "string",
+            "example": "none"
+          },
+          "owner": {
+            "type": "string",
+            "example": "0xbE4FeAE32210f682A41e1C41e3eaF4f8204cD29E"
+          },
+          "symbol": {
+            "type": "string",
+            "example": "ETH"
+          },
+          "address": {
+            "type": "string",
+            "example": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          },
+          "balance": {
+            "type": "integer",
+            "example": 0.048290635905422014
+          },
+          "price": {
+            "type": "integer",
+            "example": 2897.93
+          },
+          "logo": {
+            "type": "string",
+            "example": "https://bscscan.com/token/images/ethereum_32.png"
+          }
+        }
+      }
+    },
+    "ProjectTokenBalances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "token"
+          },
+          "chain": {
+            "type": "string",
+            "example": "poly"
+          },
+          "location": {
+            "type": "string",
+            "example": "pooltogether"
+          },
+          "status": {
+            "type": "string",
+            "example": "staked"
+          },
+          "owner": {
+            "type": "string",
+            "example": "0xbE4FeAE32210f682A41e1C41e3eaF4f8204cD29E"
+          },
+          "symbol": {
+            "type": "string",
+            "example": "USDC"
+          },
+          "address": {
+            "type": "string",
+            "example": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+          },
+          "balance": {
+            "type": "integer",
+            "example": 1000.63853
+          },
+          "price": {
+            "type": "integer",
+            "example": 0.999635
+          },
+          "logo": {
+            "type": "string",
+            "example": "https://polygonscan.com/token/images/centre-usdc_32.png"
+          }
+        }
+      }
+    },
+    "TXs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TransferTX"
+      }
+    },
+    "TransferTX": {
+      "type": "object",
+      "properties": {
+        "wallet": {
+          "type": "string",
+          "example": "0xbe4feae32210f682a41e1c41e3eaf4f8204cd29e"
+        },
+        "chain": {
+          "type": "string",
+          "example": "eth"
+        },
+        "type": {
+          "type": "string",
+          "example": "transfer"
+        },
+        "hash": {
+          "type": "string",
+          "example": "0xdc4b491965df301d9227a145acb6be65c11b4834c3842327e2c6ec0d6490eaab"
+        },
+        "time": {
+          "type": "integer",
+          "example": 1636428741
+        },
+        "direction": {
+          "type": "string",
+          "example": "in"
+        },
+        "from": {
+          "type": "string",
+          "example": "0xe78388b4ce79068e89bf8aa7f218ef6b9ab0e9d0"
+        },
+        "to": {
+          "type": "string",
+          "example": "0xbe4feae32210f682a41e1c41e3eaf4f8204cd29e"
+        },
+        "token": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string",
+              "example": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+            },
+            "symbol": {
+              "type": "string",
+              "example": "WETH"
+            },
+            "logo": {
+              "type": "string",
+              "example": "https://etherscan.io/token/images/weth_28.png"
+            }
+          }
+        },
+        "value": {
+          "type": "integer",
+          "example": 0.09019050653190469
+        },
+        "fee": {
+          "type": "integer",
+          "example": 0.008622447679821444
+        },
+        "nativeToken": {
+          "type": "string",
+          "example": "ETH"
+        }
+      }
+    },
+    "ApprovalTX": {
+      "type": "object",
+      "properties": {
+        "wallet": {
+          "type": "string",
+          "example": "0xbe4feae32210f682a41e1c41e3eaf4f8204cd29e"
+        },
+        "chain": {
+          "type": "string",
+          "example": "eth"
+        },
+        "type": {
+          "type": "string",
+          "example": "approve"
+        },
+        "hash": {
+          "type": "string",
+          "example": "0x0ec8cbbc80ff85e950ddcaf76c7a1b3293382934dc50d3888b6da2f5a4f75239"
+        },
+        "time": {
+          "type": "integer",
+          "example": 1636429775
+        },
+        "direction": {
+          "type": "string",
+          "example": "out"
+        },
+        "token": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string",
+              "example": "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72"
+            },
+            "symbol": {
+              "type": "string",
+              "example": "ENS"
+            },
+            "logo": {
+              "type": "string",
+              "example": "https://etherscan.io/token/images/ens2_32.png"
+            }
+          }
+        },
+        "fee": {
+          "type": "integer",
+          "example": 0.008525161757286374
+        },
+        "nativeToken": {
+          "type": "string",
+          "example": "ETH"
+        }
+      }
+    },
+    "Fees": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "integer",
+          "example": 0.11589681073305874
+        },
+        "txs": {
+          "type": "integer",
+          "example": 14
+        },
+        "price": {
+          "type": "integer",
+          "example": 2890.76
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "API Contribution Guidelines",
+    "url": "https://github.com/CookieTrack-io/weaverfi-api/blob/master/CONTRIBUTING.md"
+  }
+}

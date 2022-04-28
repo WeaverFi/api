@@ -4,7 +4,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
-// const swagger = require('swagger-ui-express');
+const swagger = require('swagger-ui-express');
 
 // Imports:
 import weaver from 'weaverfi';
@@ -12,8 +12,8 @@ import { sendError, getTXs, getFees, updateTokenPricesDB, fetchTokenPricesDB, fe
 import type { Application, Request, Response, NextFunction } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
-// Fetching Required JSON Files:
-// const swaggerDocs: JSON = require('../static/swagger.json'); // <TODO>
+// Fetching Swagger Docs Setup JSON File:
+const swaggerDocs: JSON = require('../static/swagger.json');
 
 // Fetching Firebase Logger Compatibility Patch:
 require("firebase-functions/lib/logger/compat");
@@ -44,7 +44,7 @@ api.get('/', (req: Request, res: Response) => {
 });
 
 // Swagger Documentation Endpoint:
-// api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
+api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
 
 // Logging Middleware:
 api.use((req: Request, res: Response, next: NextFunction) => {
