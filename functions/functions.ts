@@ -433,7 +433,8 @@ const blacklist: Record<EVMChain, Address[]> = {
     '0xd7f1d4f5a1b44d827a7c3cc5dd46a80fade55558',
     '0x22e51bae3f545255e115090202a23c7ede0b00b9',
     '0x0b91b07beb67333225a5ba0259d55aee10e3a578',
-    '0xfae400bf04f88e47d899cfe7e7c16bf8c8ae919b'
+    '0xfae400bf04f88e47d899cfe7e7c16bf8c8ae919b',
+    '0xdc8fa3fab8421ff44cc6ca7f966673ff6c0b3b58'
   ],
   ftm: [
     '0x95ce7b991cfc7e3ad8466ac20746b9bed7713b0a',
