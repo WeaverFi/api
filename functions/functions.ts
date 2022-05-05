@@ -4,7 +4,7 @@ import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Response } from 'express';
-import type { ErrorResponseType } from './types';
+import type { ErrorResponseType, CovalentAPIResponse } from './types';
 import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
 
 // Initializations:
@@ -119,14 +119,14 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
 
   // Fetching Covalent API Data:
   do {
-    let response;
+    let response: CovalentAPIResponse | undefined = undefined;
     let errors = 0;
     while(!response && errors < 3) {
       try {
         response = (await axios.get(`https://api.covalenthq.com/v1/${fetchChainID(chain)}/address/${wallet}/transactions_v2/?page-size=1000&page-number=${page++}&key=${keys.ckey}`)).data;
-        if(!response.error) {
+        if(response && !response.error) {
           hasNextPage = response.data.pagination.has_more;
-          response.data.items.forEach((tx: any) => {
+          response.data.items.forEach(tx => {
             if(tx.successful) {
 
               // Setting Basic Info:
@@ -135,6 +135,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
               let nativeTokenLogo = weaver[upperCaseChain].getTokenLogo(nativeToken);
               let wrappedNativeTokenAddress = fetchWrappedNativeTokenAddress(chain);
               let hash = tx.tx_hash;
+              let block = tx.block_height;
               let time = (new Date(tx.block_signed_at)).getTime() / 1000;
               let fee = (tx.gas_spent * tx.gas_price) / (10 ** 18);
               wallet = wallet.toLowerCase() as Address;
@@ -145,7 +146,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                 let to: Address = tx.to_address;
                 let token: TXToken = { address: defaultAddress, symbol: nativeToken, logo: nativeTokenLogo }
                 let value = parseInt(tx.value) / (10 ** 18);
-                txs.push({ wallet, chain, type: 'transfer', hash, time, direction: tx.to_address === wallet ? 'in' : 'out', from, to, token, value, fee, nativeToken });
+                txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: tx.to_address === wallet ? 'in' : 'out', from, to, token, value, fee, nativeToken });
 
                 // Wrapping TXs:
                 if(wrappedNativeTokenAddress && tx.to_address.toLowerCase() === wrappedNativeTokenAddress) {
@@ -153,18 +154,18 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                   let to: Address = tx.from_address;
                   let symbol = 'W' + nativeToken;
                   let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
-                  txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
+                  txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
                 }
 
               // Approval TXs:
               } else if(tx.log_events.length < 3) {
-                tx.log_events.forEach((event: any) => {
+                tx.log_events.forEach(event => {
                   if(event.decoded != null && event.sender_contract_ticker_symbol != null) {
                     if(event.decoded.name === 'Approval') {
                       if(event.decoded.params[0].name === 'owner' && event.decoded.params[0].value === wallet) {
                         let symbol = event.sender_contract_ticker_symbol;
                         let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
-                        txs.push({ wallet, chain, type: parseInt(event.decoded.params[2].value) > 0 ? 'approve' : 'revoke', hash, time, direction: 'out', token, fee, nativeToken});
+                        txs.push({ wallet, chain, type: parseInt(event.decoded.params[2].value) > 0 ? 'approve' : 'revoke', hash, block, time, direction: 'out', token, fee, nativeToken});
                       }
                     }
                   }
@@ -172,7 +173,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
               }
 
               // Other TXs:
-              tx.log_events.forEach((event: any) => {
+              tx.log_events.forEach(event => {
                 if(event.decoded != null) {
 
                   // Token Transfers:
@@ -185,14 +186,14 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                       // Outbound:
                       if(event.decoded.params[0].name === 'from' && event.decoded.params[0].value === wallet && event.decoded.params[2].decoded) {
                         let from: Address = wallet;
-                        let to: Address = event.decoded.params[1].value;
-                        txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'out', from, to, token, value, fee, nativeToken });
+                        let to: Address = event.decoded.params[1].value as Address;
+                        txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'out', from, to, token, value, fee, nativeToken });
 
                       // Inbound:
                       } else if(event.decoded.params[1].name === 'to' && event.decoded.params[1].value === wallet && event.decoded.params[2].decoded) {
-                        let from: Address = event.decoded.params[0].value;
+                        let from: Address = event.decoded.params[0].value as Address;
                         let to: Address = wallet;
-                        txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
+                        txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
                       }
                     }
 
@@ -201,7 +202,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                     let from: Address = tx.to_address;
                     let to: Address = tx.from_address;
                     let token: TXToken = { address: defaultAddress, symbol: nativeToken, logo: nativeTokenLogo }
-                    let nullEvent = tx.log_events.find((event: any) => event.decoded === null);
+                    let nullEvent = tx.log_events.find(event => event.decoded === null);
                     if(nullEvent) {
                       if(!nullEventNativeSwapTXs.includes(nullEvent.tx_hash)) {
                         nullEventNativeSwapTXs.push(nullEvent.tx_hash);
@@ -209,12 +210,12 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                         // ParaSwap TXs:
                         if(nullEvent.raw_log_topics[0] === '0x680ad12fcfabafe9b1f08214caef968eb651cf010bee4a2824adfaec965903e8' && nullEvent.raw_log_topics[3].endsWith('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')) {
                           let value = ((parseInt(nullEvent.raw_log_data.slice(194, 258), 16) + parseInt(nullEvent.raw_log_data.slice(258, 322), 16)) / 2) / (10 ** 18);
-                          txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
+                          txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
                         }
                       }
                     } else {
                       let value = parseInt(event.decoded.params[1].value) / (10 ** 18);
-                      txs.push({ wallet, chain, type: 'transfer', hash, time, direction: 'in', from, to, token, value, fee, nativeToken });
+                      txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
                     }
                   }
                 }
@@ -247,19 +248,20 @@ const queryCovalentSimpleTXs = async (chain: EVMChain, wallet: Address) => {
 
   // Fetching Covalent API Data:
   do {
-    let response;
+    let response: CovalentAPIResponse | undefined = undefined;
     let errors = 0;
     while(!response && errors < 3) {
       try {
         response = (await axios.get(`https://api.covalenthq.com/v1/${fetchChainID(chain)}/address/${wallet}/transactions_v2/?no-logs=true&page-size=1000&page-number=${page++}&key=${keys.ckey}`)).data;
-        if(!response.error) {
+        if(response && !response.error) {
           hasNextPage = response.data.pagination.has_more;
-          response.data.items.forEach((tx: any) => {
+          response.data.items.forEach(tx => {
             wallet = wallet.toLowerCase() as Address;
             let hash = tx.tx_hash;
+            let block = tx.block_height;
             let time = (new Date(tx.block_signed_at)).getTime() / 1000;
             let fee = tx.gas_price < 10000000000000 ? (tx.gas_spent * tx.gas_price) / (10 ** 18) : tx.gas_price / (10 ** 18); // Workaround regarding Covalent gas pricing bugs.
-            txs.push({ wallet, chain, hash, time, direction: tx.from_address === wallet ? 'out' : 'in', fee });
+            txs.push({ wallet, chain, hash, block, time, direction: tx.from_address === wallet ? 'out' : 'in', fee });
           });
         } else {
           hasNextPage = false;

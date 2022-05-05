@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -967,6 +967,10 @@
           "type": "string",
           "example": "0xdc4b491965df301d9227a145acb6be65c11b4834c3842327e2c6ec0d6490eaab"
         },
+        "block": {
+          "type": "integer",
+          "example": 13579836
+        },
         "time": {
           "type": "integer",
           "example": 1636428741
@@ -1032,6 +1036,10 @@
         "hash": {
           "type": "string",
           "example": "0x0ec8cbbc80ff85e950ddcaf76c7a1b3293382934dc50d3888b6da2f5a4f75239"
+        },
+        "block": {
+          "type": "integer",
+          "example": 13579918
         },
         "time": {
           "type": "integer",
