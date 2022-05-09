@@ -30,9 +30,11 @@ api.use(express.static('functions/static'));
 const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
-// Settings:
+// Local Test Settings:
 const localTesting: boolean = false;
 const localTestingPort: number = 3000;
+
+// Price Fetcher Settings:
 const priceFetcher: boolean = true;
 const priceFetcherFrequencyInMinutes: number = 20;
 
@@ -285,7 +287,7 @@ if(localTesting) {
   
   // Exporting Firebase Price Fetcher Scheduled Function:
   if(priceFetcher) {
-    exports.priceFetcher = functions.pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
+    exports.priceFetcher = functions.runWith({ timeoutSeconds: 60 }).pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
       let prices = await weaver.getAllTokenPrices();
       let timestamp = await updateTokenPricesDB(admin.firestore(), prices);
       console.info(`Fetched token prices at timestamp: ${timestamp}`);
