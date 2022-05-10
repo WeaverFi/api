@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "0.7.1",
+    "version": "0.8.0",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -843,8 +843,25 @@
       }
     },
     "TokenPrice": {
-      "type": "integer",
-      "example": 2890.76
+      "type": "object",
+      "properties": {
+        "chain": {
+          "type": "string",
+          "example": "ETH"
+        },
+        "address": {
+          "type": "string",
+          "example": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "decimals": {
+          "type": "integer",
+          "example": 18
+        },
+        "price": {
+          "type": "integer",
+          "example": 2890.76
+        }
+      }
     },
     "WalletTokenBalances": {
       "type": "array",

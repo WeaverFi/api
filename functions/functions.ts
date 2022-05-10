@@ -3,7 +3,7 @@
 import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import type { ErrorResponseType, CovalentAPIResponse } from './types';
 import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
 
@@ -12,8 +12,23 @@ const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 /* ========================================================================================================================================================================= */
 
+// Function to send API responses:
+export const sendResponse = (req: Request, res: Response, data: any) => {
+  try {
+    let request = req.originalUrl;
+    res.status(200).end(JSON.stringify({ data, request }, null, ' '));
+  } catch(err) {
+    sendError('internalError', res, err);
+  }
+}
+
+/* ========================================================================================================================================================================= */
+
 // Function to send API error responses:
-export const sendError = (responseType: ErrorResponseType, res: Response) => {
+export const sendError = (responseType: ErrorResponseType, res: Response, err?: any) => {
+  if(err) {
+    console.error(err);
+  }
   res.status(errorResponses[responseType].status).end(errorResponses[responseType].message);
 }
 

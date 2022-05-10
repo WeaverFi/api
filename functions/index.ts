@@ -8,7 +8,7 @@ const swagger = require('swagger-ui-express');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
+import { sendResponse, sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
 
 // Type Imports:
 import type { Application, Request, Response, NextFunction } from 'express';
@@ -33,9 +33,9 @@ const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // Settings:
-const localTesting: boolean = false;
-const localTestingPort: number = 3000;
-const dbPrices: boolean = true;
+const localTesting: boolean = true; // Set this to `true` to test the API locally instead of deploying it.
+const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
+const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firestore prior to running WeaverFi SDK functions (production-only).
 
 /* ========================================================================================================================================================================= */
 
@@ -59,17 +59,17 @@ api.use((req: Request, res: Response, next: NextFunction) => {
 
 // Chain List Endpoint:
 api.get('/chains', (req: Request, res: Response) => {
-  res.end(JSON.stringify(weaver.getAllChainInfo(), null, ' '));
+  sendResponse(req, res, weaver.getAllChainInfo());
 });
 
 // Project List Endpoint:
 api.get('/projects', (req: Request, res: Response) => {
-  res.end(JSON.stringify(weaver.getAllProjects(), null, ' '));
+  sendResponse(req, res, weaver.getAllProjects());
 });
 
 // Token List Endpoint:
 api.get('/tokens', (req: Request, res: Response) => {
-  res.end(JSON.stringify(weaver.getAllTokens(), null, ' '));
+  sendResponse(req, res, weaver.getAllTokens());
 });
 
 /* ========================================================================================================================================================================= */
@@ -78,13 +78,12 @@ api.get('/tokens', (req: Request, res: Response) => {
 api.get('/tokenPrices', async (req: Request, res: Response) => {
   try {
     if(!localTesting && dbPrices) {
-      res.status(200).end(JSON.stringify(await fetchTokenPricesDB(admin), null, ' '));
+      sendResponse(req, res, await fetchTokenPricesDB(admin));
     } else {
-      res.status(200).end(JSON.stringify(await weaver.getAllTokenPrices(), null, ' '));
+      sendResponse(req, res, await weaver.getAllTokenPrices());
     }
   } catch(err) {
-    console.error(err);
-    sendError('internalError', res);
+    sendError('internalError', res, err);
   }
 });
 
@@ -92,13 +91,12 @@ api.get('/tokenPrices', async (req: Request, res: Response) => {
 api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
   try {
     if(!localTesting && dbPrices) {
-      res.status(200).end(JSON.stringify(await fetchNativeTokenPricesDB(admin), null, ' '));
+      sendResponse(req, res, await fetchNativeTokenPricesDB(admin));
     } else {
-      res.status(200).end(JSON.stringify(await weaver.getNativeTokenPrices(), null, ' '));
+      sendResponse(req, res, await weaver.getNativeTokenPrices());
     }
   } catch(err) {
-    console.error(err);
-    sendError('internalError', res);
+    sendError('internalError', res, err);
   }
 });
 
@@ -109,30 +107,29 @@ weaver.getAllChains().forEach(chain => {
 
   // Chain Info Endpoint:
   api.get(`/${chain.toLowerCase()}/info`, (req: Request, res: Response) => {
-    res.status(200).end(JSON.stringify(weaver[chain].getInfo(), null, ' '));
+    sendResponse(req, res, weaver[chain].getInfo());
   });
 
   // Project List Endpoint:
   api.get(`/${chain.toLowerCase()}/projects`, (req: Request, res: Response) => {
-    res.status(200).end(JSON.stringify(weaver[chain].getProjects(), null, ' '));
+    sendResponse(req, res, weaver[chain].getProjects());
   });
 
   // Token List Endpoint:
   api.get(`/${chain.toLowerCase()}/tokens`, (req: Request, res: Response) => {
-    res.status(200).end(JSON.stringify(weaver[chain].getTokens(), null, ' '));
+    sendResponse(req, res, weaver[chain].getTokens());
   });
 
   // Token Prices Endpoint:
   api.get(`/${chain.toLowerCase()}/tokenPrices`, async (req: Request, res: Response) => {
     try {
       if(!localTesting && dbPrices) {
-        res.status(200).end(JSON.stringify(await fetchChainTokenPricesDB(admin, chain), null, ' '));
+        sendResponse(req, res, await fetchChainTokenPricesDB(admin, chain));
       } else {
-        res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' '));
+        sendResponse(req, res, await weaver[chain].getTokenPrices());
       }
     } catch(err) {
-      console.error(err);
-      sendError('internalError', res);
+      sendError('internalError', res, err);
     }
   });
 
@@ -140,28 +137,25 @@ weaver.getAllChains().forEach(chain => {
   api.get(`/${chain.toLowerCase()}/tokenPrice`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     let decimals = req.query.decimals ? parseInt(req.query.decimals as string) : undefined;
+    let tokenInfo = { chain, address, decimals, price: 0 };
     if(address) {
       try {
-        let priceFound = false;
         if(!localTesting && dbPrices) {
           let tokenPrice = await fetchTokenPriceDB(admin, chain, address);
-          if(tokenPrice) {
-            priceFound = true;
-            res.status(200).end(JSON.stringify(tokenPrice, null, ' '));
-          }
+          if(tokenPrice) { tokenInfo.price = tokenPrice; }
         }
-        if(!priceFound) {
+        if(tokenInfo.price === 0) {
           if(chain === 'TERRA' && weaver[chain].isAddress(address as TerraAddress)) {
-            res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as TerraAddress, decimals), null, ' '));
+            tokenInfo.price = await weaver[chain].getTokenPrice(address as TerraAddress, decimals);
           } else if(address.startsWith('0x')) {
-            res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrice(address as Address, decimals), null, ' '));
+            tokenInfo.price = await weaver[chain].getTokenPrice(address as Address, decimals);
           } else {
             sendError('invalidAddress', res);
           }
         }
+        sendResponse(req, res, tokenInfo);
       } catch(err) {
-        console.error(err);
-        sendError('internalError', res);
+        sendError('internalError', res, err);
       }
     } else {
       sendError('missingAddress', res);
@@ -175,15 +169,14 @@ weaver.getAllChains().forEach(chain => {
       try {
         if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
-          res.status(200).end(JSON.stringify(await weaver[chain].getWalletBalance(address as TerraAddress), null, ' '));
+          sendResponse(req, res, await weaver[chain].getWalletBalance(address as TerraAddress));
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-          res.status(200).end(JSON.stringify(await weaver[chain].getWalletBalance(address as Address), null, ' '));
+          sendResponse(req, res, await weaver[chain].getWalletBalance(address as Address));
         } else {
           sendError('invalidAddress', res);
         }
       } catch(err) {
-        console.error(err);
-        sendError('internalError', res);
+        sendError('internalError', res, err);
       }
     } else {
       sendError('missingAddress', res);
@@ -200,15 +193,14 @@ weaver.getAllChains().forEach(chain => {
           try {
             if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
             if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
-              res.status(200).end(JSON.stringify(await weaver[chain].getProjectBalance(address as TerraAddress, project), null, ' '));
+              sendResponse(req, res, await weaver[chain].getProjectBalance(address as TerraAddress, project));
             } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-              res.status(200).end(JSON.stringify(await weaver[chain].getProjectBalance(address as Address, project), null, ' '));
+              sendResponse(req, res, await weaver[chain].getProjectBalance(address as Address, project));
             } else {
               sendError('invalidAddress', res);
             }
           } catch(err) {
-            console.error(err);
-            sendError('internalError', res);
+            sendError('internalError', res, err);
           }
         } else {
           sendError('missingAddress', res);
@@ -229,13 +221,12 @@ weaver.getAllChains().forEach(chain => {
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-          res.status(200).end(JSON.stringify(await getTXs(chain.toLowerCase() as EVMChain, address as Address), null, ' '));
+          sendResponse(req, res, await getTXs(chain.toLowerCase() as EVMChain, address as Address));
         } else {
           sendError('invalidAddress', res);
         }
       } catch(err) {
-        console.error(err);
-        sendError('internalError', res);
+        sendError('internalError', res, err);
       }
     } else {
       sendError('missingAddress', res);
@@ -251,13 +242,12 @@ weaver.getAllChains().forEach(chain => {
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
-          res.status(200).end(JSON.stringify(await getFees(chain.toLowerCase() as EVMChain, address as Address), null, ' '));
+          sendResponse(req, res, await getFees(chain.toLowerCase() as EVMChain, address as Address));
         } else {
           sendError('invalidAddress', res);
         }
       } catch(err) {
-        console.error(err);
-        sendError('internalError', res);
+        sendError('internalError', res, err);
       }
     } else {
       sendError('missingAddress', res);
