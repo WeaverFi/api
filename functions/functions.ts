@@ -99,15 +99,6 @@ export const fetchTokenPricesDB = async (admin: any) => {
 
 /* ========================================================================================================================================================================= */
 
-// Function to update database with fetched token prices:
-export const updateTokenPricesDB = async (db: any, priceData: Record<Chain, TokenPriceData[]>) => {
-  let timestamp = Date.now();
-  await db.collection('prices').add({ timestamp, priceData });
-  return timestamp;
-}
-
-/* ========================================================================================================================================================================= */
-
 // Function to query wallet transactions from Covalent:
 const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
 

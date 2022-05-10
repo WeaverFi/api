@@ -8,7 +8,9 @@ const swagger = require('swagger-ui-express');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendError, getTXs, getFees, updateTokenPricesDB, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
+import { sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
+
+// Type Imports:
 import type { Application, Request, Response, NextFunction } from 'express';
 import type { URL, Address, TerraAddress, EVMChain } from 'weaverfi/dist/types';
 
@@ -30,13 +32,10 @@ api.use(express.static('functions/static'));
 const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
-// Local Test Settings:
+// Settings:
 const localTesting: boolean = false;
 const localTestingPort: number = 3000;
-
-// Price Fetcher Settings:
-const priceFetcher: boolean = true;
-const priceFetcherFrequencyInMinutes: number = 20;
+const dbPrices: boolean = true;
 
 /* ========================================================================================================================================================================= */
 
@@ -78,7 +77,7 @@ api.get('/tokens', (req: Request, res: Response) => {
 // All Token Prices Endpoint:
 api.get('/tokenPrices', async (req: Request, res: Response) => {
   try {
-    if(!localTesting && priceFetcher) {
+    if(!localTesting && dbPrices) {
       res.status(200).end(JSON.stringify(await fetchTokenPricesDB(admin), null, ' '));
     } else {
       res.status(200).end(JSON.stringify(await weaver.getAllTokenPrices(), null, ' '));
@@ -92,7 +91,7 @@ api.get('/tokenPrices', async (req: Request, res: Response) => {
 // Native Token Prices Endpoint:
 api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
   try {
-    if(!localTesting && priceFetcher) {
+    if(!localTesting && dbPrices) {
       res.status(200).end(JSON.stringify(await fetchNativeTokenPricesDB(admin), null, ' '));
     } else {
       res.status(200).end(JSON.stringify(await weaver.getNativeTokenPrices(), null, ' '));
@@ -126,7 +125,7 @@ weaver.getAllChains().forEach(chain => {
   // Token Prices Endpoint:
   api.get(`/${chain.toLowerCase()}/tokenPrices`, async (req: Request, res: Response) => {
     try {
-      if(!localTesting && priceFetcher) {
+      if(!localTesting && dbPrices) {
         res.status(200).end(JSON.stringify(await fetchChainTokenPricesDB(admin, chain), null, ' '));
       } else {
         res.status(200).end(JSON.stringify(await weaver[chain].getTokenPrices(), null, ' '));
@@ -144,7 +143,7 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         let priceFound = false;
-        if(!localTesting && priceFetcher) {
+        if(!localTesting && dbPrices) {
           let tokenPrice = await fetchTokenPriceDB(admin, chain, address);
           if(tokenPrice) {
             priceFound = true;
@@ -174,7 +173,7 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
+        if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           res.status(200).end(JSON.stringify(await weaver[chain].getWalletBalance(address as TerraAddress), null, ' '));
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -199,7 +198,7 @@ weaver.getAllChains().forEach(chain => {
       if(weaver[chain].getProjects().includes(project)) {
         if(address) {
           try {
-            if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
+            if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
             if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
               res.status(200).end(JSON.stringify(await weaver[chain].getProjectBalance(address as TerraAddress, project), null, ' '));
             } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -248,7 +247,7 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        if(!localTesting && priceFetcher) { await fetchTokenPricesDB(admin); }
+        if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
         if(chain === 'TERRA' && weaver.TERRA.isAddress(address as TerraAddress)) {
           sendError('routeError', res); // Terra TX History Not Supported Yet
         } else if(chain != 'TERRA' && weaver[chain].isAddress(address as Address)) {
@@ -281,17 +280,5 @@ if(localTesting) {
 
 // Production Deployment:
 } else {
-  
-  // Exporting Firebase API Function:
   exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 120 }).https.onRequest(api);
-  
-  // Exporting Firebase Price Fetcher Scheduled Function:
-  if(priceFetcher) {
-    exports.priceFetcher = functions.runWith({ timeoutSeconds: 60 }).pubsub.schedule(`every ${priceFetcherFrequencyInMinutes} minutes`).onRun(async () => {
-      let prices = await weaver.getAllTokenPrices();
-      let timestamp = await updateTokenPricesDB(admin.firestore(), prices);
-      console.info(`Fetched token prices at timestamp: ${timestamp}`);
-      return null;
-    });
-  }
 }
