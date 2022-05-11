@@ -33,7 +33,7 @@ const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // Settings:
-const localTesting: boolean = true; // Set this to `true` to test the API locally instead of deploying it.
+const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firestore prior to running WeaverFi SDK functions (production-only).
 
