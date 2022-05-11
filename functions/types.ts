@@ -5,7 +5,7 @@ import type { Address, Hash } from 'weaverfi/dist/types';
 /* ========================================================================================================================================================================= */
 
 // Error Types:
-export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProject' | 'invalidAddress' | 'invalidProject' | 'missingAuth' | 'invalidAuth' | 'rateLimited' | 'internalError';
+export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProject' | 'invalidAddress' | 'invalidProject' | 'missingAuth' | 'invalidAuth' | 'teapot' | 'rateLimited' | 'internalError';
 
 /* ========================================================================================================================================================================= */
 

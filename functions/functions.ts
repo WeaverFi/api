@@ -358,6 +358,10 @@ const errorResponses: Record<ErrorResponseType, { status: number, message: strin
     status: 401,
     message: `Invalid API key provided.`
   },
+  teapot: {
+    status: 418,
+    message: `             ;,'\n     _o_    ;:;'\n ,-.'---\`.__ ;\n((j\`=====',-'\n \`-\\     /\n    \`-=-'`
+  },
   rateLimited: {
     status: 429,
     message: `Too many requests.`
