@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -148,8 +148,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           }
         ],
@@ -198,8 +197,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           }
         ],
@@ -248,8 +246,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           }
         ],
@@ -360,8 +357,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           }
         ],
@@ -410,8 +406,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           },
           {
@@ -473,8 +468,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           },
           {
@@ -530,8 +524,7 @@
               "ftm",
               "avax",
               "one",
-              "cronos",
-              "terra"
+              "cronos"
             ]
           },
           {

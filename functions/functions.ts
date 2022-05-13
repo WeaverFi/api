@@ -5,7 +5,7 @@ import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
 import type { ErrorResponseType, CovalentAPIResponse } from './types';
-import type { Address, Chain, EVMChain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
+import type { Address, Chain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -35,7 +35,7 @@ export const sendError = (responseType: ErrorResponseType, res: Response, err?: 
 /* ========================================================================================================================================================================= */
 
 // Function to get a wallet's transaction history:
-export const getTXs = async (chain: EVMChain, wallet: Address) => {
+export const getTXs = async (chain: Chain, wallet: Address) => {
   let txs = await queryCovalentTXs(chain, wallet);
   return txs.sort((a, b) => a.time - b.time);
 }
@@ -43,7 +43,7 @@ export const getTXs = async (chain: EVMChain, wallet: Address) => {
 /* ========================================================================================================================================================================= */
 
 // Function to get a wallet's gas fee expenditure:
-export const getFees = async (chain: EVMChain, wallet: Address) => {
+export const getFees = async (chain: Chain, wallet: Address) => {
   let fees = { amount: 0, txs: 0, price: 0 };
   let txs = await queryCovalentSimpleTXs(chain, wallet);
   txs.forEach(tx => {
@@ -115,7 +115,7 @@ export const fetchTokenPricesDB = async (admin: any) => {
 /* ========================================================================================================================================================================= */
 
 // Function to query wallet transactions from Covalent:
-const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
+const queryCovalentTXs = async (chain: Chain, wallet: Address) => {
 
   // Initializations:
   let txs: (TransferTX | ApprovalTX)[] = [];
@@ -155,7 +155,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
                 txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: tx.to_address === wallet ? 'in' : 'out', from, to, token, value, fee, nativeToken });
 
                 // Wrapping TXs:
-                if(wrappedNativeTokenAddress && tx.to_address.toLowerCase() === wrappedNativeTokenAddress) {
+                if(tx.to_address.toLowerCase() === wrappedNativeTokenAddress) {
                   let from: Address = tx.to_address;
                   let to: Address = tx.from_address;
                   let symbol = 'W' + nativeToken;
@@ -245,7 +245,7 @@ const queryCovalentTXs = async (chain: EVMChain, wallet: Address) => {
 /* ========================================================================================================================================================================= */
 
 // Function to query wallet transactions with no logs from Covalent:
-const queryCovalentSimpleTXs = async (chain: EVMChain, wallet: Address) => {
+const queryCovalentSimpleTXs = async (chain: Chain, wallet: Address) => {
 
   // Initializations:
   let txs: SimpleTX[] = [];
@@ -286,13 +286,9 @@ const queryCovalentSimpleTXs = async (chain: EVMChain, wallet: Address) => {
 /* ========================================================================================================================================================================= */
 
 // Function to fetch chain ID:
-const fetchChainID = (chain: EVMChain) => {
+const fetchChainID = (chain: Chain) => {
   let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  if(upperCaseChain != 'TERRA') {
-    return weaver[upperCaseChain].getInfo().id;
-  } else {
-    return undefined;
-  }
+  return weaver[upperCaseChain].getInfo().id;
 }
 
 /* ========================================================================================================================================================================= */
@@ -306,19 +302,15 @@ const fetchNativeToken = (chain: Chain) => {
 /* ========================================================================================================================================================================= */
 
 // Function to fetch a chain's wrapped native token address:
-const fetchWrappedNativeTokenAddress = (chain: EVMChain) => {
+const fetchWrappedNativeTokenAddress = (chain: Chain) => {
   let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  if(upperCaseChain != 'TERRA') {
-    return weaver[upperCaseChain].getInfo().wrappedToken;
-  } else {
-    return undefined;
-  }
+  return weaver[upperCaseChain].getInfo().wrappedToken;
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to check if a given token is blacklisted:
-const isBlacklisted = (chain: EVMChain, token: Address) => {
+const isBlacklisted = (chain: Chain, token: Address) => {
   if(blacklist[chain].includes(token.toLowerCase() as Address)) {
     return true;
   } else {
@@ -375,7 +367,7 @@ const errorResponses: Record<ErrorResponseType, { status: number, message: strin
 /* ========================================================================================================================================================================= */
 
 // Token Blacklist:
-const blacklist: Record<EVMChain, Address[]> = {
+const blacklist: Record<Chain, Address[]> = {
   eth: [
     '0x616fe98349783f1975361d5eb827ef31f90b47b6',
     '0x82dfdb2ec1aa6003ed4acba663403d7c2127ff67',
