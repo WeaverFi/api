@@ -1,5 +1,4 @@
-![WeaverFi Logo][logo]
-# WeaverFi API
+![WeaverFi Banner][banner]
 
 The API that powers WeaverFi.
 
@@ -38,4 +37,4 @@ This repository is already setup for Firebase hosting, but could easily be adapt
 
 3. To deploy to Firebase, add your project ID in `.firebaserc` (an example file is provided), and use `firebase deploy`.
 
-[logo]: /functions/static/favicon.ico "WeaverFi"
+[banner]: /Banner.png "WeaverFi"
