@@ -4,11 +4,14 @@ import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
-import type { ErrorResponseType, CovalentAPIResponse } from './types';
+import type { ErrorResponseType, AggregatedTokenPriceData, CovalentAPIResponse } from './types';
 import type { Address, Chain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+const dbPricesCollectionName = 'prices';
+const storageBucketName = 'weaverfi-price-history';
+const storageFileName = 'tokenPrices.json';
 
 /* ========================================================================================================================================================================= */
 
@@ -95,7 +98,7 @@ export const fetchTokenPriceDB = async (admin: any, chain: UpperCaseChain, addre
 
 // Function to fetch token prices from database:
 export const fetchTokenPricesDB = async (admin: any) => {
-  let pricesRef = admin.firestore().collection('prices');
+  const pricesRef = admin.firestore().collection(dbPricesCollectionName);
   let pricesSnapshot = await pricesRef.orderBy('timestamp', 'desc').limit(1).get();
   if(!pricesSnapshot.empty) {
     let latestPrices: { timestamp: number, priceData: Record<Chain, TokenPriceData[]> } = pricesSnapshot.docs[0].data();
@@ -110,6 +113,29 @@ export const fetchTokenPricesDB = async (admin: any) => {
     console.error('No token price data found on database.');
   }
   return weaver.fetchPrices() as Record<Chain, TokenPriceData[]>;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch a token's price history from database:
+export const fetchTokenPriceHistoryDB = async (admin: any, chain: UpperCaseChain, address: string) => {
+  let file = await fetchPriceHistoryDB(admin);
+  let tokenInfo = file[chain.toLowerCase() as Chain].find(token => token.address === address.toLowerCase());
+  if(tokenInfo) {
+    return tokenInfo.prices;
+  } else {
+    return [];
+  }
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch token price histories from database:
+export const fetchPriceHistoryDB = async (admin: any) => {
+  const priceHistoryBucket = admin.storage().bucket(storageBucketName);
+  let rawFile = await priceHistoryBucket.file(storageFileName).download();
+  let file: Record<Chain, AggregatedTokenPriceData[]> = JSON.parse(rawFile.toString());
+  return file;
 }
 
 /* ========================================================================================================================================================================= */

@@ -9,6 +9,18 @@ export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProjec
 
 /* ========================================================================================================================================================================= */
 
+// Database Types:
+export interface AggregatedTokenPriceData {
+  symbol: string | null
+  address: Address
+  prices: {
+    price: number
+    timestamp: number
+  }[]
+}
+
+/* ========================================================================================================================================================================= */
+
 // Covalent Interfaces:
 export interface CovalentAPIResponse {
   data: CovalentTXsAPIResponse

@@ -8,7 +8,7 @@ const swagger = require('swagger-ui-express');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendResponse, sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB } from './functions';
+import { sendResponse, sendError, getTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
 
 // Type Imports:
 import type { Application, Request, Response, NextFunction } from 'express';
@@ -35,7 +35,7 @@ const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}
 // Settings:
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
-const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firestore prior to running WeaverFi SDK functions (production-only).
+const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
 
 /* ========================================================================================================================================================================= */
 
@@ -243,6 +243,25 @@ weaver.getAllChains().forEach(chain => {
       sendError('missingAddress', res);
     }
   });
+
+  // Token Price History Endpoint:
+  if(!localTesting && dbPrices) {
+    api.get(`/${chain.toLowerCase()}/tokenPriceHistory`, async (req: Request, res: Response) => {
+      let address = req.query.address as string | undefined;
+      let priceHistory: { price: number, timestamp: number }[] = [];
+      if(address) {
+        try {
+          let prices = await fetchTokenPriceHistoryDB(admin, chain, address);
+          priceHistory.push(...prices);
+          sendResponse(req, res, { chain, address, priceHistory });
+        } catch(err) {
+          sendError('internalError', res, err);
+        }
+      } else {
+        sendError('missingAddress', res);
+      }
+    });
+  }
 });
 
 /* ========================================================================================================================================================================= */
