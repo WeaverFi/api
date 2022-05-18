@@ -476,5 +476,7 @@ const blacklist: Record<Chain, Address[]> = {
     '0xd17584633bc8d190e5a14502976dad9640456d6d'
   ],
   one: [],
-  cronos: []
+  cronos: [],
+  op: [],
+  arb: []
 }
