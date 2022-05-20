@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -694,6 +694,64 @@
         }
       }
     },
+    "/{chain}/nfts": {
+      "get": {
+        "tags": [
+          "Balances"
+        ],
+        "summary": "Gets NFT balances in any wallet address.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "op",
+              "arb"
+            ]
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/WalletNFTBalances"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
+    },
     "/{chain}/fees": {
       "get": {
         "tags": [
@@ -1024,6 +1082,50 @@
           "logo": {
             "type": "string",
             "example": "https://polygonscan.com/token/images/centre-usdc_32.png"
+          }
+        }
+      }
+    },
+    "WalletNFTBalances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "nft"
+          },
+          "chain": {
+            "type": "string",
+            "example": "poly"
+          },
+          "location": {
+            "type": "string",
+            "example": "wallet"
+          },
+          "status": {
+            "type": "string",
+            "example": "none"
+          },
+          "owner": {
+            "type": "string",
+            "example": "0xbE4FeAE32210f682A41e1C41e3eaF4f8204cD29E"
+          },
+          "name": {
+            "type": "string",
+            "example": "PoolTogether: Season 1"
+          },
+          "address": {
+            "type": "string",
+            "example": "0x841918849E6784d7e643837Ad59571eA1fc5000B"
+          },
+          "id": {
+            "type": "integer",
+            "example": 25585
+          },
+          "data": {
+            "type": "string",
+            "example": "{\"name\":\"POOL PARTY POOLTOGETHER SEASON 1 NFTs #4\",\"description\":\"This mission rewards anyone who has held POOL for the last 42 days. \\nLearn more about the [POOL token](https://docs.pooltogether.com/pooltogether/pool-token).\\n\\n*Snapshot taken on Sunday May 8th, 19:00 UTC*\\nThe following POOL is valid:\\n- [POOL token on Ethereum](https://etherscan.io/token/0x0cec1a9154ff802e7934fc916ed7ca50bde6844e)\\n- [pPOOL prize pool ticket on Ethereum](https://etherscan.io/token/0x27d22a7648e955e510a40bdb058333e9190d12d4)\\n- [POOL (POS) token on Polygon](https://polygonscan.com/token/0x25788a1a171ec66da6502f9975a15b609ff54cf6)\\n- [pPOOL on Polygon](https://polygonscan.com/token/0xd80eaa761ccfdc8698999d73c96cec39fbb1fc48)\\n- [SushiSwap Polygon LP](https://polygonscan.com/token/0x34908ec7f451beaa88c46c60a394cf324f86f67e)\\n- [UniswapV2 Ethereum LP](https://etherscan.io/address/0x85cb0bab616fe88a89a35080516a8928f38b518b)\\n- [Quickswap Polygon LP](https://polygonscan.com/token/0x1585d301b58661bc0cb5a8eba24ecae7b4600470)\",\"image\":\"https://dweb.link/ipfs/bafybeidv5uunidkkgsiz6ivga6rzjsnoyhxjzmc33xwcaomi5dna55ohra/Screen%20Shot%202022-03-21%20at%206.28.24%20PM.png\",\"animation_url\":\"https://d257b89266utxb.cloudfront.net/galaxy/images/pooltogether/1647858489196238653.mp4\",\"background_color\":\"\",\"external_link\":\"https://galaxy.eco/nft/25585/0x841918849E6784d7e643837Ad59571eA1fc5000B\",\"owner\":\"0xbE4FeAE32210f682A41e1C41e3eaF4f8204cD29E\",\"attributes\":[{\"trait_type\":\"category\",\"value\":\"POOL PARTY POOLTOGETHER SEASON 1 NFTs #4\"},{\"display_type\":\"date\",\"trait_type\":\"birthday\",\"value\":1652758218}]}"
           }
         }
       }

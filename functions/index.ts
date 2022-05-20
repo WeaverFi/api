@@ -207,6 +207,24 @@ weaver.getAllChains().forEach(chain => {
     }
   });
 
+  // NFT Balance Endpoint:
+  api.get(`/${chain.toLowerCase()}/nfts`, async (req: Request, res: Response) => {
+    let address = req.query.address as string | undefined;
+    if(address) {
+      try {
+        if(weaver[chain].isAddress(address as Address)) {
+          sendResponse(req, res, await weaver[chain].getNFTBalance(address as Address));
+        } else {
+          sendError('invalidAddress', res);
+        }
+      } catch(err) {
+        sendError('internalError', res, err);
+      }
+    } else {
+      sendError('missingAddress', res);
+    }
+  });
+
   // Transaction History Endpoint:
   api.get(`/${chain.toLowerCase()}/txs`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
