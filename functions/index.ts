@@ -228,10 +228,15 @@ weaver.getAllChains().forEach(chain => {
   // Transaction History Endpoint:
   api.get(`/${chain.toLowerCase()}/txs`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
+    let page = req.query.page as string | undefined;
     if(address) {
       try {
         if(weaver[chain].isAddress(address as Address)) {
-          sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address));
+          if(page) {
+            sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address, parseInt(page)));
+          } else {
+            sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address));
+          }
         } else {
           sendError('invalidAddress', res);
         }
