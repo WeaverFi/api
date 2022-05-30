@@ -271,11 +271,9 @@ weaver.getAllChains().forEach(chain => {
   if(!localTesting && dbPrices) {
     api.get(`/${chain.toLowerCase()}/tokenPriceHistory`, async (req: Request, res: Response) => {
       let address = req.query.address as string | undefined;
-      let priceHistory: { price: number, timestamp: number }[] = [];
       if(address) {
         try {
-          let prices = await fetchTokenPriceHistoryDB(admin, chain, address);
-          priceHistory.push(...prices);
+          let priceHistory = await fetchTokenPriceHistoryDB(admin, chain, address);
           sendResponse(req, res, { chain, address, priceHistory });
         } catch(err) {
           sendError('internalError', res, err);

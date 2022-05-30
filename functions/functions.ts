@@ -11,7 +11,6 @@ import type { Address, Chain, UpperCaseChain, Hash, TransferTX, ApprovalTX, Simp
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const dbPricesCollectionName = 'prices';
 const storageBucketName = 'weaverfi-price-history';
-const storageFileName = 'tokenPrices.json';
 
 /* ========================================================================================================================================================================= */
 
@@ -124,23 +123,11 @@ export const fetchTokenPricesDB = async (admin: any) => {
 
 // Function to fetch a token's price history from database:
 export const fetchTokenPriceHistoryDB = async (admin: any, chain: UpperCaseChain, address: string) => {
-  let file = await fetchPriceHistoryDB(admin);
-  let tokenInfo = file[chain.toLowerCase() as Chain].find(token => token.address === address.toLowerCase());
-  if(tokenInfo) {
-    return tokenInfo.prices;
-  } else {
-    return [];
-  }
-}
-
-/* ========================================================================================================================================================================= */
-
-// Function to fetch token price histories from database:
-export const fetchPriceHistoryDB = async (admin: any) => {
   const priceHistoryBucket = admin.storage().bucket(storageBucketName);
+  const storageFileName = `${chain.toLowerCase()}/${address.toLowerCase()}.json`;
   let rawFile = await priceHistoryBucket.file(storageFileName).download();
-  let file: Record<Chain, AggregatedTokenPriceData[]> = JSON.parse(rawFile.toString());
-  return file;
+  let file: AggregatedTokenPriceData = JSON.parse(rawFile.toString());
+  return file.prices;
 }
 
 /* ========================================================================================================================================================================= */
