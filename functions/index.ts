@@ -36,6 +36,7 @@ const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
+const minInstances = 1; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
 
 /* ========================================================================================================================================================================= */
 
@@ -307,5 +308,5 @@ if(localTesting) {
 
 // Production Deployment:
 } else {
-  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 180, minInstances: 1 }).https.onRequest(api);
+  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 180, minInstances: minInstances }).https.onRequest(api);
 }
