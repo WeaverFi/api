@@ -4,8 +4,8 @@ import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
-import type { ErrorResponseType, AggregatedTokenPriceData, CovalentAPIResponse } from './types';
-import type { Address, Chain, UpperCaseChain, Hash, TransferTX, ApprovalTX, SimpleTX, TXToken, TokenPriceData } from 'weaverfi/dist/types';
+import type { Address, Chain, UpperCaseChain, Hash, TokenPriceData } from 'weaverfi/dist/types';
+import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse } from './types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -205,8 +205,9 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
                   if(event.decoded.name === 'Approval') {
                     if(event.decoded.params[0].name === 'owner' && event.decoded.params[0].value === wallet) {
                       let symbol = event.sender_contract_ticker_symbol;
-                      let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
-                      txs.push({ wallet, chain, type: parseInt(event.decoded.params[2].value) > 0 ? 'approve' : 'revoke', hash, block, time, direction: 'out', token, fee, nativeToken});
+                      let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) };
+                      let value = parseInt(event.decoded.params[2].value) / (10 ** event.sender_contract_decimals);
+                      txs.push({ wallet, chain, type: value > 0 ? 'approve' : 'revoke', hash, block, time, direction: 'out', token, fee, nativeToken, value});
                     }
                   }
                 }

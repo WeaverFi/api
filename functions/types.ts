@@ -1,15 +1,18 @@
 
 // Importing WeaverFi SDK Types:
-import type { Address, Hash } from 'weaverfi/dist/types';
+import type { Address, Hash, Chain, URL } from 'weaverfi/dist/types';
 
 /* ========================================================================================================================================================================= */
 
 // Error Types:
 export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProject' | 'invalidAddress' | 'invalidProject' | 'missingAuth' | 'invalidAuth' | 'teapot' | 'rateLimited' | 'internalError';
 
+// Transaction Types:
+export type TXType = 'transfer' | 'approve' | 'revoke';
+
 /* ========================================================================================================================================================================= */
 
-// Database Types:
+// Database Interfaces:
 export interface AggregatedTokenPriceData {
   symbol: string | null
   address: Address
@@ -17,6 +20,38 @@ export interface AggregatedTokenPriceData {
     price: number
     timestamp: number
   }[]
+}
+
+/* ========================================================================================================================================================================= */
+
+// Transaction Interfaces:
+export interface SimpleTX {
+  wallet: Address
+  chain: Chain
+  hash: Hash
+  block: number
+  time: number
+  direction: 'in' | 'out'
+  fee: number
+}
+export interface DetailedTX extends SimpleTX {
+  type: TXType
+  token: TXToken
+  nativeToken: string
+  value: number
+}
+export interface ApprovalTX extends DetailedTX {
+  type: 'approve' | 'revoke'
+}
+export interface TransferTX extends DetailedTX {
+  type: 'transfer'
+  from: Address
+  to: Address
+}
+export interface TXToken {
+  address: Address
+  symbol: string
+  logo: URL
 }
 
 /* ========================================================================================================================================================================= */
