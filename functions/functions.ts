@@ -39,7 +39,7 @@ export const sendError = (responseType: ErrorResponseType, res: Response, err?: 
 // Function to get a wallet's transaction history:
 export const getTXs = async (chain: Chain, wallet: Address, page?: number) => {
   let txs: (TransferTX | ApprovalTX)[] = [];
-  if(page) {
+  if(page !== undefined) {
     txs = (await queryCovalentPageTXs(chain, wallet, 100, page)).txs;
   } else {
     txs = await queryCovalentTXs(chain, wallet);

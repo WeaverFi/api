@@ -232,7 +232,7 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(weaver[chain].isAddress(address as Address)) {
-          if(page) {
+          if(page !== undefined) {
             sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address, parseInt(page)));
           } else {
             sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address));
