@@ -307,5 +307,5 @@ if(localTesting) {
 
 // Production Deployment:
 } else {
-  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 120 }).https.onRequest(api);
+  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 180, minInstances: 1 }).https.onRequest(api);
 }
