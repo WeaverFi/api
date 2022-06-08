@@ -183,19 +183,21 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
 
             // Native Transfer TXs:
             if(parseInt(tx.value) > 0) {
-              let from: Address = tx.from_address;
-              let to: Address = tx.to_address;
-              let token: TXToken = { address: defaultAddress, symbol: nativeToken, logo: nativeTokenLogo }
-              let value = parseInt(tx.value) / (10 ** 18);
-              txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: tx.to_address === wallet ? 'in' : 'out', from, to, token, value, fee, nativeToken });
-
-              // Wrapping TXs:
-              if(tx.to_address.toLowerCase() === wrappedNativeTokenAddress) {
-                let from: Address = tx.to_address;
-                let to: Address = tx.from_address;
-                let symbol = 'W' + nativeToken;
-                let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
-                txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
+              if((tx.from_address === wallet || tx.to_address === wallet)) {
+                let from: Address = tx.from_address;
+                let to: Address = tx.to_address;
+                let token: TXToken = { address: defaultAddress, symbol: nativeToken, logo: nativeTokenLogo }
+                let value = parseInt(tx.value) / (10 ** 18);
+                txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: tx.to_address === wallet ? 'in' : 'out', from, to, token, value, fee, nativeToken });
+  
+                // Wrapping TXs:
+                if(tx.to_address.toLowerCase() === wrappedNativeTokenAddress) {
+                  let from: Address = tx.to_address;
+                  let to: Address = tx.from_address;
+                  let symbol = 'W' + nativeToken;
+                  let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
+                  txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
+                }
               }
 
             // Approval TXs:
@@ -482,7 +484,8 @@ const blacklist: Record<Chain, Address[]> = {
     '0xfae400bf04f88e47d899cfe7e7c16bf8c8ae919b',
     '0xdc8fa3fab8421ff44cc6ca7f966673ff6c0b3b58',
     '0xf31cdb090d1d4b86a7af42b62dc5144be8e42906',
-    '0x531f83800425a0c4c6964e41d843798e5822b829'
+    '0x531f83800425a0c4c6964e41d843798e5822b829',
+    '0x514b4916a152190424757da1005ea8be613f552b'
   ],
   ftm: [
     '0x95ce7b991cfc7e3ad8466ac20746b9bed7713b0a',
