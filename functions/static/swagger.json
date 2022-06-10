@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -815,6 +815,57 @@
           }
         }
       }
+    },
+    "/{chain}/gas": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Get a chain's transaction gas fee estimates.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "description": "Blockchain to query.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "eth",
+              "bsc",
+              "poly",
+              "ftm",
+              "avax",
+              "one",
+              "cronos",
+              "op",
+              "arb"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful query.",
+            "schema": {
+              "$ref": "#/definitions/Gas"
+            }
+          },
+          "400": {
+            "description": "Bad request."
+          },
+          "401": {
+            "description": "Invalid authorization."
+          },
+          "429": {
+            "description": "Too many requests (rate limited)."
+          },
+          "500": {
+            "description": "Internal API error."
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1322,6 +1373,35 @@
               "timestamp": {
                 "type": "integer",
                 "example": 1652583305303
+              }
+            }
+          }
+        }
+      }
+    },
+    "Gas": {
+      "type": "object",
+      "properties": {
+        "gasPrice": {
+          "type": "integer",
+          "example": 52.629786743
+        },
+        "tokenPrice": {
+          "type": "integer",
+          "example": 1778.59
+        },
+        "estimates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "gas": {
+                "type": "integer",
+                "example": 21000
+              },
+              "cost": {
+                "type": "integer",
+                "example": 1.9657430604678792
               }
             }
           }

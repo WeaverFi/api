@@ -33,7 +33,7 @@ const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // Settings:
-const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
+const localTesting: boolean = true; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
 const minInstances = 0; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
@@ -119,6 +119,11 @@ weaver.getAllChains().forEach(chain => {
   // Token List Endpoint:
   api.get(`/${chain.toLowerCase()}/tokens`, (req: Request, res: Response) => {
     sendResponse(req, res, weaver[chain].getTokens());
+  });
+
+  // Gas Estimates Endpoint:
+  api.get(`/${chain.toLowerCase()}/gas`, async (req: Request, res: Response) => {
+    sendResponse(req, res, await weaver[chain].getGasEstimates());
   });
 
   // Token Prices Endpoint:
