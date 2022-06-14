@@ -676,6 +676,12 @@
             "in": "query",
             "description": "Optional pagination (Use `0` for latest page).",
             "type": "integer"
+          },
+          {
+            "name": "simple",
+            "in": "query",
+            "description": "Optional speed variable (Set to `true` to return simpler results).",
+            "type": "boolean"
           }
         ],
         "responses": {

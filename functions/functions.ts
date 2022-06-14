@@ -49,6 +49,14 @@ export const getTXs = async (chain: Chain, wallet: Address, page?: number) => {
 
 /* ========================================================================================================================================================================= */
 
+// Function to get a wallet's simple transaction history:
+export const getSimpleTXs = async (chain: Chain, wallet: Address) => {
+  let txs = await queryCovalentSimpleTXs(chain, wallet);
+  return txs.sort((a, b) => b.time - a.time);
+}
+
+/* ========================================================================================================================================================================= */
+
 // Function to get a wallet's gas fee expenditure:
 export const getFees = async (chain: Chain, wallet: Address) => {
   let fees = { amount: 0, txs: 0, price: 0 };
