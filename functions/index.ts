@@ -37,6 +37,7 @@ const localTesting: boolean = false; // Set this to `true` to test the API local
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
 const minInstances = 0; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
+const maxInstances = 100; // Set this to the maximum number of function instances you would like to have (stops excessive scaling during peak usage).
 
 /* ========================================================================================================================================================================= */
 
@@ -318,5 +319,5 @@ if(localTesting) {
 
 // Production Deployment:
 } else {
-  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 180, minInstances: minInstances }).https.onRequest(api);
+  exports.api = functions.runWith({ memory: '1GB', timeoutSeconds: 180, minInstances: minInstances, maxInstances: maxInstances }).https.onRequest(api);
 }
