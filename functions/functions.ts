@@ -5,7 +5,7 @@ import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
 import type { Address, Chain, UpperCaseChain, Hash, TokenPriceData } from 'weaverfi/dist/types';
-import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse } from './types';
+import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse, CovalentTX } from './types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -186,7 +186,7 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
             let hash = tx.tx_hash;
             let block = tx.block_height;
             let time = (new Date(tx.block_signed_at)).getTime() / 1000;
-            let fee = (tx.gas_spent * tx.gas_price) / (10 ** 18);
+            let fee = calcFee(chain, tx);
             wallet = wallet.toLowerCase() as Address;
 
             // Native Transfer TXs:
@@ -311,7 +311,7 @@ const queryCovalentSimpleTXs = async (chain: Chain, wallet: Address) => {
             let hash = tx.tx_hash;
             let block = tx.block_height;
             let time = (new Date(tx.block_signed_at)).getTime() / 1000;
-            let fee = tx.gas_price < 10000000000000 ? (tx.gas_spent * tx.gas_price) / (10 ** 18) : tx.gas_price / (10 ** 18); // Workaround regarding Covalent gas pricing bugs.
+            let fee = calcFee(chain, tx);
             txs.push({ wallet, chain, hash, block, time, direction: tx.from_address === wallet ? 'out' : 'in', fee });
           });
         } else {
@@ -326,6 +326,21 @@ const queryCovalentSimpleTXs = async (chain: Chain, wallet: Address) => {
     }
   } while(hasNextPage);
   return txs;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to calculate transaction fees from Covalent data:
+const calcFee = (chain: Chain, tx: CovalentTX) => {
+  let fees = (tx.gas_spent * tx.gas_price) / (10 ** 18);
+  if(chain === 'op') {
+    let estimatedRollupGas = 5000;
+    let estimatedGasPrice = 35000000000;
+    let layer1Fees = (estimatedRollupGas * estimatedGasPrice) / (10 ** 18);
+    return fees + layer1Fees;
+  } else {
+    return fees;
+  }
 }
 
 /* ========================================================================================================================================================================= */
