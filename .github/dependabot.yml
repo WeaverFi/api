@@ -4,5 +4,6 @@ updates:
     directory: "/functions/"
     schedule:
       interval: "daily"
+      time: "21:00"
     allow:
       - dependency-name: "weaverfi"
