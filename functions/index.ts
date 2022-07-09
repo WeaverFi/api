@@ -29,7 +29,7 @@ api.use(cors());
 api.use(express.static('functions/static'));
 
 // Initializations:
-const repository: URL = 'https://github.com/CookieTrack-io/weaverfi-api';
+const repository: URL = 'https://github.com/WeaverFi/api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // Settings:

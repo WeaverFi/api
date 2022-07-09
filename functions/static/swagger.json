@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/CookieTrack-io/weaverfi-api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
+    "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/WeaverFi/api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
     "version": "1.1.0",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
-      "url": "https://github.com/CookieTrack-io/weaverfi-api/blob/master/LICENSE.md"
+      "url": "https://github.com/WeaverFi/api/blob/main/LICENSE.md"
     }
   },
   "schemes": [
@@ -1417,6 +1417,6 @@
   },
   "externalDocs": {
     "description": "API Contribution Guidelines",
-    "url": "https://github.com/CookieTrack-io/weaverfi-api/blob/master/CONTRIBUTING.md"
+    "url": "https://github.com/WeaverFi/api/blob/main/CONTRIBUTING.md"
   }
 }

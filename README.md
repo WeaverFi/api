@@ -2,8 +2,8 @@
 
 The API that powers WeaverFi.
 
-![CodeQL](https://github.com/CookieTrack-io/api/actions/workflows/codeql-analysis.yml/badge.svg)
-![Version](https://img.shields.io/github/package-json/v/CookieTrack-io/api)
+![CodeQL](https://github.com/WeaverFi/api/actions/workflows/codeql-analysis.yml/badge.svg)
+![Version](https://img.shields.io/github/package-json/v/WeaverFi/api)
 
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -11,7 +11,7 @@ The API that powers WeaverFi.
 ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 ![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase)
 
-![Twitter Shield](https://img.shields.io/twitter/follow/cookietrack_io?style=social)
+[<img src="https://img.shields.io/twitter/follow/weaver_fi?style=social" />](https://twitter.com/weaver_fi)
 
 ---
 

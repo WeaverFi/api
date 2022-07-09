@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-Most of the API's functionality comes from WeaverFi's SDK. That repository can be found [here](https://github.com/CookieTrack-io/weaverfi).
+Most of the API's functionality comes from WeaverFi's SDK. That repository can be found [here](https://github.com/WeaverFi/weaverfi).
 
 If you'd like to contribute to something specific with regards to the API, feel free to create a new issue, PR, or get in touch with other contributors through our [Discord server](https://discord.com/invite/DzADcq7y75).
 
