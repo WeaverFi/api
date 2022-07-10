@@ -489,7 +489,8 @@ const blacklist: Record<Chain, Address[]> = {
     '0x2248ba304d2045cdc144866ce37d1435a30b29f3',
     '0xbf7183b8c8e5bb2d10f63678abb5d52df72712b2',
     '0x1c749d5f5630cf365673bf6c0b6b0570c48da112',
-    '0x7b4a50a9010c79be94baf3e7ae49f2602557855c'
+    '0x7b4a50a9010c79be94baf3e7ae49f2602557855c',
+    '0xdfb8603d947ab42fb76eb3bb14d9dde4334130d2'
   ],
   poly: [
     '0xe4fb1bb8423417a460286b0ed44b64e104c5fae5',
