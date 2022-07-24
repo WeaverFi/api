@@ -522,7 +522,8 @@ const blacklist: Record<Chain, Address[]> = {
     '0xe4517100ae62cbeefc363e59d0f8df5754dc7e40'
   ],
   avax: [
-    '0xd17584633bc8d190e5a14502976dad9640456d6d'
+    '0xd17584633bc8d190e5a14502976dad9640456d6d',
+    '0x4a0050cc4a951d8bf0b58129301b9fc7657b0198'
   ],
   one: [],
   cronos: [],
