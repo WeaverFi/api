@@ -12,7 +12,6 @@
   "schemes": [
     "https"
   ],
-  "host": "api.weaver.fi",
   "tags": [
     {
       "name": "Info",
@@ -956,6 +955,10 @@
               "example": "avalanche-2"
             }
           }
+        },
+        "multicall": {
+          "type": "string",
+          "example": "0xed386fe855c1eff2f843b910923dd8846e45c5a4"
         }
       }
     },

@@ -230,7 +230,7 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
 
                 // Token Transfers:
                 if(event.decoded.name === 'Transfer') {
-                  if(!isBlacklisted(chain, event.sender_address) && event.sender_contract_ticker_symbol != null && parseInt(event.decoded.params[2].value) > 0) {
+                  if(!isBlacklisted(chain, event.sender_address) && event.sender_contract_ticker_symbol != null && event.decoded.params[2].name === 'value' && parseInt(event.decoded.params[2].value) > 0) {
                     let symbol = event.sender_contract_ticker_symbol;
                     let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
                     let value = parseInt(event.decoded.params[2].value) / (10 ** event.sender_contract_decimals);
@@ -513,7 +513,8 @@ const blacklist: Record<Chain, Address[]> = {
     '0x531f83800425a0c4c6964e41d843798e5822b829',
     '0x514b4916a152190424757da1005ea8be613f552b',
     '0x0f1f17e4260515d9bfe805cff323374eb771eae6',
-    '0x439a06e69f1302f3f94f265d32ca4511e882b5cd'
+    '0x439a06e69f1302f3f94f265d32ca4511e882b5cd',
+    '0x9e2d266d6c90f6c0d80a88159b15958f7135b8af'
   ],
   ftm: [
     '0x95ce7b991cfc7e3ad8466ac20746b9bed7713b0a',
