@@ -426,7 +426,7 @@ const errorResponses: Record<ErrorResponseType, { status: number, message: strin
 
 /* ========================================================================================================================================================================= */
 
-// Token Blacklist:
+// Token Blacklist (lowercase):
 const blacklist: Record<Chain, Address[]> = {
   eth: [
     '0x616fe98349783f1975361d5eb827ef31f90b47b6',
@@ -440,7 +440,11 @@ const blacklist: Record<Chain, Address[]> = {
     '0xaf47ebbd460f21c2b3262726572ca8812d7143b0',
     '0xbddab785b306bcd9fb056da189615cc8ece1d823',
     '0xc12d1c73ee7dc3615ba4e37e4abfdbddfa38907e',
-    '0x26004d228fc8a32c5bd1a106108c8647a455b04a'
+    '0x26004d228fc8a32c5bd1a106108c8647a455b04a',
+    '0xf84ea569eaaebd634cac7944058f1b17386aa56e',
+    '0x4e0b2a80e158f8d28a2007866ab80b7f63be6076',
+    '0xbf5fb1563ef58ba41325454ca61cc3d62bd40744',
+    '0xf01f7a348681776c1fc9a066c6973882b693cdc6'
   ],
   bsc: [
     '0xb0557906c617f0048a700758606f64b33d0c41a6',
@@ -490,7 +494,8 @@ const blacklist: Record<Chain, Address[]> = {
     '0xbf7183b8c8e5bb2d10f63678abb5d52df72712b2',
     '0x1c749d5f5630cf365673bf6c0b6b0570c48da112',
     '0x7b4a50a9010c79be94baf3e7ae49f2602557855c',
-    '0xdfb8603d947ab42fb76eb3bb14d9dde4334130d2'
+    '0xdfb8603d947ab42fb76eb3bb14d9dde4334130d2',
+    '0x24c7ee6a2b22e72886d88f309d2ac89619c443b6'
   ],
   poly: [
     '0xe4fb1bb8423417a460286b0ed44b64e104c5fae5',
@@ -518,7 +523,10 @@ const blacklist: Record<Chain, Address[]> = {
     '0xbd43eb85eacc3b5571d3805538f64cc27c21cfc0',
     '0xceb28732d284306c9c44682a8aa788d36d81ad96',
     '0x92face859e48c5d70510bf9bbc60a4b4c4fc8b98',
-    '0x52f3b30922d252151d72746dd325390a4e3fa1fb'
+    '0x52f3b30922d252151d72746dd325390a4e3fa1fb',
+    '0x5229cadb824fd5117f00e3614c138b62f2bd3156',
+    '0xe0ddf6de9a86f8ad46c40e7714b7960514491ff4',
+    '0x695be1c915e3f13315cb226900c168789554f5eb'
   ],
   ftm: [
     '0x95ce7b991cfc7e3ad8466ac20746b9bed7713b0a',
@@ -530,7 +538,6 @@ const blacklist: Record<Chain, Address[]> = {
     '0xd17584633bc8d190e5a14502976dad9640456d6d',
     '0x4a0050cc4a951d8bf0b58129301b9fc7657b0198'
   ],
-  one: [],
   cronos: [],
   op: [],
   arb: []
