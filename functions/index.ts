@@ -1,18 +1,18 @@
 
 // Required Packages:
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const express = require('express');
 const cors = require('cors');
+const express = require('express');
+const admin = require('firebase-admin');
 const swagger = require('swagger-ui-express');
+const functions = require('firebase-functions');
 
 // Imports:
 import weaver from 'weaverfi';
 import { sendResponse, sendError, getTXs, getSimpleTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
 
 // Type Imports:
+import type { URL, Address } from 'weaverfi/dist/types';
 import type { Application, Request, Response, NextFunction } from 'express';
-import type { URL, Address, Chain } from 'weaverfi/dist/types';
 
 // Fetching Swagger Docs Setup JSON File:
 const swaggerDocs: JSON = require('../static/swagger.json');
@@ -108,27 +108,27 @@ api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
 weaver.getAllChains().forEach(chain => {
 
   // Chain Info Endpoint:
-  api.get(`/${chain.toLowerCase()}/info`, (req: Request, res: Response) => {
+  api.get(`/${chain}/info`, (req: Request, res: Response) => {
     sendResponse(req, res, weaver[chain].getInfo());
   });
 
   // Project List Endpoint:
-  api.get(`/${chain.toLowerCase()}/projects`, (req: Request, res: Response) => {
+  api.get(`/${chain}/projects`, (req: Request, res: Response) => {
     sendResponse(req, res, weaver[chain].getProjects());
   });
 
   // Token List Endpoint:
-  api.get(`/${chain.toLowerCase()}/tokens`, (req: Request, res: Response) => {
+  api.get(`/${chain}/tokens`, (req: Request, res: Response) => {
     sendResponse(req, res, weaver[chain].getTokens());
   });
 
   // Gas Estimates Endpoint:
-  api.get(`/${chain.toLowerCase()}/gas`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/gas`, async (req: Request, res: Response) => {
     sendResponse(req, res, await weaver[chain].getGasEstimates());
   });
 
   // Token Prices Endpoint:
-  api.get(`/${chain.toLowerCase()}/tokenPrices`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/tokenPrices`, async (req: Request, res: Response) => {
     try {
       if(!localTesting && dbPrices) {
         sendResponse(req, res, await fetchChainTokenPricesDB(admin, chain));
@@ -141,7 +141,7 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // Token Price Endpoint:
-  api.get(`/${chain.toLowerCase()}/tokenPrice`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/tokenPrice`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     let decimals = req.query.decimals ? parseInt(req.query.decimals as string) : undefined;
     let tokenInfo = { chain, address, decimals, price: 0 };
@@ -168,7 +168,7 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // Wallet Balance Endpoint:
-  api.get(`/${chain.toLowerCase()}/wallet`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/wallet`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
@@ -187,7 +187,7 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // Project Balance Endpoint:
-  api.get(`/${chain.toLowerCase()}/project`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/project`, async (req: Request, res: Response) => {
     let project = req.query.name as string | undefined;
     let address = req.query.address as string | undefined;
     if(project) {
@@ -215,7 +215,7 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // NFT Balance Endpoint:
-  api.get(`/${chain.toLowerCase()}/nfts`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/nfts`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
@@ -233,7 +233,7 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // Transaction History Endpoint:
-  api.get(`/${chain.toLowerCase()}/txs`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/txs`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     let page = req.query.page as string | undefined;
     let simple = req.query.simple as string | undefined;
@@ -241,12 +241,12 @@ weaver.getAllChains().forEach(chain => {
       try {
         if(weaver[chain].isAddress(address as Address)) {
           if(simple === 'true') {
-            sendResponse(req, res, await getSimpleTXs(chain.toLowerCase() as Chain, address as Address));
+            sendResponse(req, res, await getSimpleTXs(chain, address as Address));
           } else {
             if(page !== undefined) {
-              sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address, parseInt(page)));
+              sendResponse(req, res, await getTXs(chain, address as Address, parseInt(page)));
             } else {
-              sendResponse(req, res, await getTXs(chain.toLowerCase() as Chain, address as Address));
+              sendResponse(req, res, await getTXs(chain, address as Address));
             }
           }
         } else {
@@ -261,13 +261,13 @@ weaver.getAllChains().forEach(chain => {
   });
 
   // Transaction Fees Endpoint:
-  api.get(`/${chain.toLowerCase()}/fees`, async (req: Request, res: Response) => {
+  api.get(`/${chain}/fees`, async (req: Request, res: Response) => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
         if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
         if(weaver[chain].isAddress(address as Address)) {
-          sendResponse(req, res, await getFees(chain.toLowerCase() as Chain, address as Address));
+          sendResponse(req, res, await getFees(chain, address as Address));
         } else {
           sendError('invalidAddress', res);
         }
@@ -281,7 +281,7 @@ weaver.getAllChains().forEach(chain => {
 
   // Token Price History Endpoint:
   if(!localTesting && dbPrices) {
-    api.get(`/${chain.toLowerCase()}/tokenPriceHistory`, async (req: Request, res: Response) => {
+    api.get(`/${chain}/tokenPriceHistory`, async (req: Request, res: Response) => {
       let address = req.query.address as string | undefined;
       if(address) {
         try {

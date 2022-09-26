@@ -4,7 +4,7 @@ import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
-import type { Address, Chain, UpperCaseChain, Hash, TokenPriceData } from 'weaverfi/dist/types';
+import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
 import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse, CovalentTX } from './types';
 
 // Initializations:
@@ -67,8 +67,7 @@ export const getFees = async (chain: Chain, wallet: Address) => {
       fees.txs += 1;
     }
   });
-  let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  fees.price = await weaver[upperCaseChain].getTokenPrice(defaultAddress);
+  fees.price = await weaver[chain].getTokenPrice(defaultAddress);
   return fees;
 }
 
@@ -88,17 +87,17 @@ export const fetchNativeTokenPricesDB = async (admin: any) => {
 /* ========================================================================================================================================================================= */
 
 // Function to fetch a chain's token prices from database:
-export const fetchChainTokenPricesDB = async (admin: any, chain: UpperCaseChain) => {
+export const fetchChainTokenPricesDB = async (admin: any, chain: Chain) => {
   let priceData = await fetchTokenPricesDB(admin);
-  return priceData[chain.toLowerCase() as Chain];
+  return priceData[chain];
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to fetch one token's price from database:
-export const fetchTokenPriceDB = async (admin: any, chain: UpperCaseChain, address: string) => {
+export const fetchTokenPriceDB = async (admin: any, chain: Chain, address: string) => {
   let priceData = await fetchTokenPricesDB(admin);
-  let tokenPriceData = priceData[chain.toLowerCase() as Chain].find(token => token.address === address.toLowerCase());
+  let tokenPriceData = priceData[chain].find(token => token.address === address.toLowerCase());
   if(tokenPriceData) {
     return tokenPriceData.price;
   } else {
@@ -116,23 +115,22 @@ export const fetchTokenPricesDB = async (admin: any) => {
     let latestPrices: { timestamp: number, priceData: Record<Chain, TokenPriceData[]> } = pricesSnapshot.docs[0].data();
     Object.keys(latestPrices.priceData).forEach(stringChain => {
       let chain = stringChain as Chain;
-      let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
       latestPrices.priceData[chain].forEach(tokenPriceData => {
-        weaver[upperCaseChain].updateTokenPrice(tokenPriceData);
+        weaver[chain].updateTokenPrice(tokenPriceData);
       });
     });
   } else {
     console.error('No token price data found on database.');
   }
-  return weaver.fetchPrices() as Record<Chain, TokenPriceData[]>;
+  return weaver.checkPrices() as Record<Chain, TokenPriceData[]>;
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to fetch a token's price history from database:
-export const fetchTokenPriceHistoryDB = async (admin: any, chain: UpperCaseChain, address: string) => {
+export const fetchTokenPriceHistoryDB = async (admin: any, chain: Chain, address: string) => {
   const priceHistoryBucket = admin.storage().bucket(storageBucketName);
-  const storageFileName = `${chain.toLowerCase()}/${address.toLowerCase()}.json`;
+  const storageFileName = `${chain}/${address.toLowerCase()}.json`;
   let rawFile = await priceHistoryBucket.file(storageFileName).download();
   let file: AggregatedTokenPriceData = JSON.parse(rawFile.toString());
   return file.prices;
@@ -179,9 +177,8 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
           if(tx.successful) {
 
             // Setting Basic Info:
-            let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
             let nativeToken = fetchNativeToken(chain);
-            let nativeTokenLogo = weaver[upperCaseChain].getTokenLogo(nativeToken);
+            let nativeTokenLogo = weaver[chain].getTokenLogo(nativeToken);
             let wrappedNativeTokenAddress = fetchWrappedNativeTokenAddress(chain);
             let hash = tx.tx_hash;
             let block = tx.block_height;
@@ -203,7 +200,7 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
                   let from: Address = tx.to_address;
                   let to: Address = tx.from_address;
                   let symbol = 'W' + nativeToken;
-                  let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
+                  let token: TXToken = { address: wrappedNativeTokenAddress, symbol, logo: weaver[chain].getTokenLogo(symbol) }
                   txs.push({ wallet, chain, type: 'transfer', hash, block, time, direction: 'in', from, to, token, value, fee, nativeToken });
                 }
               }
@@ -215,7 +212,7 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
                   if(event.decoded.name === 'Approval') {
                     if(event.decoded.params[0].name === 'owner' && event.decoded.params[0].value === wallet) {
                       let symbol = event.sender_contract_ticker_symbol;
-                      let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) };
+                      let token: TXToken = { address: event.sender_address, symbol, logo: weaver[chain].getTokenLogo(symbol) };
                       let value = parseInt(event.decoded.params[2].value) / (10 ** event.sender_contract_decimals);
                       txs.push({ wallet, chain, type: value > 0 ? 'approve' : 'revoke', hash, block, time, direction: 'out', token, fee, nativeToken, value});
                     }
@@ -232,7 +229,7 @@ const queryCovalentPageTXs = async (chain: Chain, wallet: Address, pageSize: num
                 if(event.decoded.name === 'Transfer') {
                   if(!isBlacklisted(chain, event.sender_address) && event.sender_contract_ticker_symbol != null && event.decoded.params[2].name === 'value' && parseInt(event.decoded.params[2].value) > 0) {
                     let symbol = event.sender_contract_ticker_symbol;
-                    let token: TXToken = { address: event.sender_address, symbol, logo: weaver[upperCaseChain].getTokenLogo(symbol) }
+                    let token: TXToken = { address: event.sender_address, symbol, logo: weaver[chain].getTokenLogo(symbol) }
                     let value = parseInt(event.decoded.params[2].value) / (10 ** event.sender_contract_decimals);
 
                     // Outbound:
@@ -347,24 +344,21 @@ const calcFee = (chain: Chain, tx: CovalentTX) => {
 
 // Function to fetch chain ID:
 const fetchChainID = (chain: Chain) => {
-  let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  return weaver[upperCaseChain].getInfo().id;
+  return weaver[chain].getInfo().id;
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to fetch a chain's native token symbol:
 const fetchNativeToken = (chain: Chain) => {
-  let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  return weaver[upperCaseChain].getInfo().token;
+  return weaver[chain].getInfo().token;
 }
 
 /* ========================================================================================================================================================================= */
 
 // Function to fetch a chain's wrapped native token address:
 const fetchWrappedNativeTokenAddress = (chain: Chain) => {
-  let upperCaseChain = chain.toUpperCase() as UpperCaseChain;
-  return weaver[upperCaseChain].getInfo().wrappedToken;
+  return weaver[chain].getInfo().wrappedToken;
 }
 
 /* ========================================================================================================================================================================= */

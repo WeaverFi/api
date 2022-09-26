@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/WeaverFi/api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "1.1.0",
+    "version": "1.2.11",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
