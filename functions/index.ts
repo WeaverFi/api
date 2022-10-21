@@ -8,7 +8,8 @@ const functions = require('firebase-functions');
 
 // Imports:
 import weaver from 'weaverfi';
-import { sendResponse, sendError, getTXs, getSimpleTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
+import { KeyManager } from '3pi';
+import { sendResponse, sendError, logUsage, getTXs, getSimpleTXs, getFees, fetchKeyDocDB, setKeyDocDB, updateKeyDocDB, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
 
 // Type Imports:
 import type { URL, Address } from 'weaverfi/dist/types';
@@ -32,12 +33,23 @@ api.use(express.static('functions/static'));
 const repository: URL = 'https://github.com/WeaverFi/api';
 const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
-// Settings:
+// General Settings:
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
-const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
+const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production only).
+const rateLimited: boolean = true; // Set this to `true` to rate limit all endpoints with a few exceptions.
 const minInstances = 0; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
 const maxInstances = 100; // Set this to the maximum number of function instances you would like to have (stops excessive scaling during peak usage).
+
+// 3PI Key Management Settings:
+const opKeyContractAddress: Address = '0x'; // <TODO> enter actual OP deployment address
+const rateLimitTimespanInMs: number = 86400000;
+const newKeyCooldown: boolean = true;
+const apiTiers: Record<number, { rateLimit: number }> = {
+  0: { rateLimit: 500 },
+  1: { rateLimit: 1500 },
+  2: { rateLimit: 4000 }
+}
 
 /* ========================================================================================================================================================================= */
 
@@ -49,12 +61,62 @@ api.get('/', (req: Request, res: Response) => {
 // Swagger Documentation Endpoint:
 api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
 
+// Teapot:
+api.get(`/teapot`, async (req: Request, res: Response) => {
+  sendError('teapot', res);
+});
+
 // Logging Middleware:
-api.use((req: Request, res: Response, next: NextFunction) => {
-  if(req.originalUrl != '/service-worker.js') {
-    console.info(`Loading: ${req.originalUrl}`);
+api.use(async (req: Request, res: Response, next: NextFunction) => {
+  if(req.path !== '/service-worker.js') {
+    if(rateLimited && (process.env.WHITELIST === undefined || (req.headers.origin && !process.env.WHITELIST.split(' ').includes(req.headers.origin)))) {
+      const apiKey = req.query.key;
+      if(apiKey) {
+        if(typeof apiKey === 'string') {
+          const keyManager = new KeyManager(opKeyContractAddress, weaver.op.getInfo().rpcs);
+          const keyHash = keyManager.getPublicHash(apiKey);
+          const isValidKey = await keyManager.isKeyActive(keyHash);
+          if(isValidKey) {
+            const keyInfo = await keyManager.getKeyInfo(keyHash);
+            const coolingDown = newKeyCooldown ? Date.now() < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
+            const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
+            if(!localTesting) {
+              const keyDoc = await fetchKeyDocDB(admin, keyHash);
+              if(keyDoc) {
+                if(keyDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
+                  const usageHistory = { timestamp: keyDoc.lastTimestamp, queries: keyDoc.queries };
+                  await updateKeyDocDB(admin, keyHash, { usage: admin.firestore.FieldValue.arrayUnion(usageHistory), lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
+                  logUsage(req);
+                  next();
+                } else if(keyDoc.queries >= rateLimit) {
+                  sendError('rateLimited', res);
+                } else {
+                  await updateKeyDocDB(admin, keyHash, { queries: admin.firestore.FieldValue.increment(1) });
+                  logUsage(req);
+                  next();
+                }
+              } else {
+                await setKeyDocDB(admin, keyHash, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1, usage: [] });
+                logUsage(req);
+                next();
+              }
+            }
+          } else {
+            sendError('invalidAuth', res);
+          }
+        } else {
+          sendError('invalidAuth', res);
+        }
+      } else {
+        sendError('missingAuth', res);
+      }
+    } else {
+      logUsage(req);
+      next();
+    }
+  } else {
+    next();
   }
-  next();
 });
 
 /* ========================================================================================================================================================================= */
@@ -295,13 +357,6 @@ weaver.getAllChains().forEach(chain => {
       }
     });
   }
-});
-
-/* ========================================================================================================================================================================= */
-
-// Teapot:
-api.get(`/teapot`, async (req: Request, res: Response) => {
-  sendError('teapot', res);
 });
 
 /* ========================================================================================================================================================================= */

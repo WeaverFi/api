@@ -5,11 +5,12 @@ import weaver from 'weaverfi';
 import keys from './keys.json';
 import type { Request, Response } from 'express';
 import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
-import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse, CovalentTX } from './types';
+import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, KeyDoc, CovalentAPIResponse, CovalentTX } from './types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const dbPricesCollectionName = 'prices';
+const dbRateLimitsCollectionName = 'rateLimits';
 const storageBucketName = 'weaverfi-price-history';
 
 /* ========================================================================================================================================================================= */
@@ -17,8 +18,7 @@ const storageBucketName = 'weaverfi-price-history';
 // Function to send API responses:
 export const sendResponse = (req: Request, res: Response, data: any) => {
   try {
-    let request = req.originalUrl;
-    res.status(200).end(JSON.stringify({ data, request }, null, ' '));
+    res.status(200).end(JSON.stringify(data, null, ' '));
   } catch(err) {
     sendError('internalError', res, err);
   }
@@ -32,6 +32,19 @@ export const sendError = (responseType: ErrorResponseType, res: Response, err?: 
     console.error(err);
   }
   res.status(errorResponses[responseType].status).end(errorResponses[responseType].message);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to log endpoint usage:
+export const logUsage = (req: Request) => {
+  let queryVars = '';
+  Object.keys(req.query).forEach(name => {
+    if(name !== 'key') {
+      queryVars += `, ${name}: ${req.query[name]?.toString()}`;
+    }
+  });
+  console.info(`Loading: ${req.path}${queryVars.length > 0 ? ` (${queryVars.slice(2)})` : ''}`);
 }
 
 /* ========================================================================================================================================================================= */
@@ -69,6 +82,38 @@ export const getFees = async (chain: Chain, wallet: Address) => {
   });
   fees.price = await weaver[chain].getTokenPrice(defaultAddress);
   return fees;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch key doc from database:
+export const fetchKeyDocDB = async (admin: any, keyHash: Hash) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  const keyDoc = await keyDocRef.get();
+  if(keyDoc.exists) {
+    return keyDoc.data() as KeyDoc;
+  } else {
+    return undefined;
+  }
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to set a key doc's value on database:
+export const setKeyDocDB = async (admin: any, keyHash: Hash, data: KeyDoc) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  await keyDocRef.set(data);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to update a key doc on database:
+export const updateKeyDocDB = async (admin: any, keyHash: Hash, data: Partial<KeyDoc>) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  await keyDocRef.update(data);
 }
 
 /* ========================================================================================================================================================================= */

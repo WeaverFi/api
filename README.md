@@ -26,12 +26,18 @@ Contribution guidelines can be found [here](CONTRIBUTING.md).
 
 ## Self-Hosting
 
-This repository is already setup for Firebase hosting, but could easily be adapted to be deployed on AWS or any other cloud deployment service.
+This repository is already setup for Firebase hosting, but could easily be adapted to be deployed on any other cloud deployment service.
 
 1. Add your own API keys in `functions/keys.json` (an example file is provided).
 
 2. Install dependencies by navigating to the `functions` folder and using `npm i`.
 
-3. To deploy to Firebase, add your project ID in `.firebaserc` (an example file is provided), and use `firebase deploy`.
+3. Add your project ID in `.firebaserc` (an example file is provided).
+
+4. Optionally, whitelist any origins to be exempt from rate limits in `functions/.env` (an example file is provided).
+
+5. Optionally, setup custom rate limits using [3PI](https://github.com/3PIKeys) or change other settings in `functions/index.ts`.
+
+3. To deploy to Firebase, use `firebase deploy`.
 
 [banner]: /Banner.png "WeaverFi"
