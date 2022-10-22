@@ -3,6 +3,8 @@
 import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
+
+// Type Imports:
 import type { Request, Response } from 'express';
 import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
 import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, KeyDoc, CovalentAPIResponse, CovalentTX } from './types';
@@ -12,6 +14,27 @@ const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const dbPricesCollectionName = 'prices';
 const dbRateLimitsCollectionName = 'rateLimits';
 const storageBucketName = 'weaverfi-price-history';
+
+// Valid API Routes:
+const validRoutes: string[] = ['chains', 'projects', 'tokens', 'tokenPrices', 'nativeTokenPrices'];
+const chains: Record<Chain, null> = { eth: null, bsc: null, poly: null, ftm: null, avax: null, cronos: null, op: null, arb: null };
+const validChainRoutes: string[] = ['info', 'projects', 'tokens', 'gas', 'tokenPrices', 'tokenPrice', 'wallet', 'project', 'nfts', 'txs', 'fees', 'tokenPriceHistory'];
+
+/* ========================================================================================================================================================================= */
+
+// Function to validate route:
+export const isValidRoute = (route: string) => {
+  const parts = route.split('/').slice(1);
+  const isValidSimpleEndpoint = validRoutes.includes(parts[0]);
+  if(isValidSimpleEndpoint) {
+    return true;
+  }
+  const isValidChainEndpoint = Object.keys(chains).includes(parts[0]) && validChainRoutes.includes(parts[1]);
+  if(isValidChainEndpoint) {
+    return true;
+  }
+  return false;
+}
 
 /* ========================================================================================================================================================================= */
 

@@ -9,10 +9,10 @@ const functions = require('firebase-functions');
 // Imports:
 import weaver from 'weaverfi';
 import { KeyManager } from '3pi';
-import { sendResponse, sendError, logUsage, getTXs, getSimpleTXs, getFees, fetchKeyDocDB, setKeyDocDB, updateKeyDocDB, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
+import { isValidRoute, sendResponse, sendError, logUsage, getTXs, getSimpleTXs, getFees, fetchKeyDocDB, setKeyDocDB, updateKeyDocDB, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
 
 // Type Imports:
-import type { URL, Address } from 'weaverfi/dist/types';
+import type { Address } from 'weaverfi/dist/types';
 import type { Application, Request, Response, NextFunction } from 'express';
 
 // Fetching Swagger Docs Setup JSON File:
@@ -28,10 +28,6 @@ admin.initializeApp();
 const api: Application = express();
 api.use(cors());
 api.use(express.static('functions/static'));
-
-// Initializations:
-const repository: URL = 'https://github.com/WeaverFi/api';
-const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
 
 // General Settings:
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
@@ -53,11 +49,6 @@ const apiTiers: Record<number, { rateLimit: number }> = {
 
 /* ========================================================================================================================================================================= */
 
-// Default Endpoint:
-api.get('/', (req: Request, res: Response) => {
-  res.status(200).end(rootResponse);
-});
-
 // Swagger Documentation Endpoint:
 api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
 
@@ -68,7 +59,7 @@ api.get(`/teapot`, async (req: Request, res: Response) => {
 
 // Logging Middleware:
 api.use(async (req: Request, res: Response, next: NextFunction) => {
-  if(req.path !== '/service-worker.js') {
+  if(isValidRoute(req.path)) {
     if(rateLimited && (process.env.WHITELIST === undefined || (req.headers.origin && !process.env.WHITELIST.split(' ').includes(req.headers.origin)))) {
       const apiKey = req.query.key;
       if(apiKey) {
