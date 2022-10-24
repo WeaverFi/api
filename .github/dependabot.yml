@@ -7,3 +7,4 @@ updates:
       time: "21:00"
     allow:
       - dependency-name: "weaverfi"
+      - dependency-name: "3pi"
