@@ -66,6 +66,12 @@ export interface KeyDoc {
   }[]
 }
 
+// Database IP Doc Interface:
+export interface IpDoc {
+  lastTimestamp: any
+  queries: number
+}
+
 /* ========================================================================================================================================================================= */
 
 // Covalent Interfaces:

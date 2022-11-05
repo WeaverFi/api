@@ -7,11 +7,12 @@ const swagger = require('swagger-ui-express');
 const functions = require('firebase-functions');
 
 // Imports:
+import { ethers } from 'ethers';
 import weaver from 'weaverfi';
 import * as fn from './functions';
 
 // Type Imports:
-import type { Address, Chain } from 'weaverfi/dist/types';
+import type { Chain, Address, Hash } from 'weaverfi/dist/types';
 import type { Application, Request, Response, NextFunction } from 'express';
 
 // Fetching Swagger Docs Setup JSON File:
@@ -38,14 +39,17 @@ const maxInstances = 100; // Set this to the maximum number of function instance
 
 // 3PI Key Management Settings:
 const contractAddresses: Partial<Record<Chain, Address>> = {
-  op: '0x' // <TODO> enter actual OP deployment address
+  op: '0x', // <TODO> enter actual OP deployment address
+  poly: '0x' // <TODO> enter actual POLY deployment address
 }
 const rateLimitTimespanInMs: number = 86400000;
 const newKeyCooldown: boolean = true;
+const freeTierID: number = 0;
 const apiTiers: Record<number, { rateLimit: number }> = {
-  0: { rateLimit: 500 },
-  1: { rateLimit: 1500 },
-  2: { rateLimit: 4000 }
+  0: { rateLimit: 50 },
+  1: { rateLimit: 500 },
+  2: { rateLimit: 1500 },
+  3: { rateLimit: 4000 }
 }
 
 /* ========================================================================================================================================================================= */
@@ -70,24 +74,30 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
             const coolingDown = newKeyCooldown ? Date.now() < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
             const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
             if(!localTesting) {
-              const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
-              if(keyDoc) {
-                if(keyDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
-                  const usageHistory = { timestamp: keyDoc.lastTimestamp, queries: keyDoc.queries };
-                  await fn.updateKeyDocDB(admin, keyInfo.hash, { usage: admin.firestore.FieldValue.arrayUnion(usageHistory), lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
-                  fn.logUsage(req);
-                  next();
-                } else if(keyDoc.queries >= rateLimit) {
-                  fn.sendError('rateLimited', res);
+              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(ethers.utils.base58.decode((req.headers['x-forwarded-for'] as String).split(',')[0])) as Hash : undefined;
+              const ipRateLimitReached = hashedIP ? await fn.isUserRateLimited(admin, hashedIP, rateLimit, rateLimitTimespanInMs) : false;
+              if(!ipRateLimitReached) {
+                const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
+                if(keyDoc) {
+                  if(keyDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
+                    const usageHistory = { timestamp: keyDoc.lastTimestamp, queries: keyDoc.queries };
+                    await fn.updateKeyDocDB(admin, keyInfo.hash, { usage: admin.firestore.FieldValue.arrayUnion(usageHistory), lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
+                    fn.logUsage(req);
+                    next();
+                  } else if(keyDoc.queries >= rateLimit) {
+                    fn.sendError('rateLimited', res);
+                  } else {
+                    await fn.updateKeyDocDB(admin, keyInfo.hash, { queries: admin.firestore.FieldValue.increment(1) });
+                    fn.logUsage(req);
+                    next();
+                  }
                 } else {
-                  await fn.updateKeyDocDB(admin, keyInfo.hash, { queries: admin.firestore.FieldValue.increment(1) });
+                  await fn.setKeyDocDB(admin, keyInfo.hash, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1, usage: [] });
                   fn.logUsage(req);
                   next();
                 }
               } else {
-                await fn.setKeyDocDB(admin, keyInfo.hash, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1, usage: [] });
-                fn.logUsage(req);
-                next();
+                fn.sendError('rateLimited', res);
               }
             }
           } else {
