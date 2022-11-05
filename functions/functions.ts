@@ -1,10 +1,12 @@
 
 // Imports:
+import { KeyManager } from '3pi';
 import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
 
 // Type Imports:
+import type { KeyInfo } from '3pi/dist/types';
 import type { Request, Response } from 'express';
 import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
 import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, KeyDoc, CovalentAPIResponse, CovalentTX } from './types';
@@ -202,6 +204,44 @@ export const fetchTokenPriceHistoryDB = async (admin: any, chain: Chain, address
   let rawFile = await priceHistoryBucket.file(storageFileName).download();
   let file: AggregatedTokenPriceData = JSON.parse(rawFile.toString());
   return file.prices;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to get 3PI key information:
+export const getKeyInfo = async (apiKey: string, contractAddresses: Partial<Record<Chain, Address>>) => {
+  for(const stringChain of Object.keys(contractAddresses)) {
+    const chain = stringChain as Chain;
+    const keyManager = initKeyManager(chain, contractAddresses);
+    if(keyManager) {
+      const keyHash = keyManager.getPublicHash(apiKey);
+      try {
+        const isValidKey = await keyManager.isKeyActive(keyHash);
+        if(isValidKey) {
+          const keyInfo = await keyManager.getKeyInfo(keyHash);
+          const key: KeyInfo & { valid: boolean, hash: Hash } = { ...keyInfo, valid: true, hash: keyHash };
+          return key;
+        }
+      } catch {}
+    }
+  }
+  const invalidKey: { valid: false } = { valid: false };
+  return invalidKey;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to initialize key manager for a given chain:
+const initKeyManager = (chain: Chain, contractAddresses: Partial<Record<Chain, Address>>) => {
+  const contractAddress = contractAddresses[chain];
+  if(contractAddress) {
+    const rpcs = weaver[chain].getInfo().rpcs;
+    const keyManager = new KeyManager(contractAddress, rpcs);
+    return keyManager;
+  } else {
+    console.error(`No contract address set for ${chain} chain.`);
+    return undefined;
+  }
 }
 
 /* ========================================================================================================================================================================= */
