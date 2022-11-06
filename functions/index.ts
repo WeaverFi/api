@@ -39,8 +39,8 @@ const maxInstances = 100; // Set this to the maximum number of function instance
 
 // 3PI Key Management Settings:
 const contractAddresses: Partial<Record<Chain, Address>> = {
-  op: '0x', // <TODO> enter actual OP deployment address
-  poly: '0x' // <TODO> enter actual POLY deployment address
+  op: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC',
+  poly: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC'
 }
 const rateLimitTimespanInMs: number = 86400000;
 const newKeyCooldown: boolean = true;
