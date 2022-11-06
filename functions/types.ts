@@ -56,6 +56,24 @@ export interface TXToken {
 
 /* ========================================================================================================================================================================= */
 
+// Database Key Doc Interface:
+export interface KeyDoc {
+  lastTimestamp: any
+  queries: number
+  usage: {
+    queries: number
+    timestamp: any
+  }[]
+}
+
+// Database IP Doc Interface:
+export interface IpDoc {
+  lastTimestamp: any
+  queries: number
+}
+
+/* ========================================================================================================================================================================= */
+
 // Covalent Interfaces:
 export interface CovalentAPIResponse {
   data: CovalentTXsAPIResponse

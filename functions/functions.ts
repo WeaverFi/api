@@ -1,24 +1,50 @@
 
 // Imports:
+import { KeyManager } from '3pi';
 import axios from 'axios';
 import weaver from 'weaverfi';
 import keys from './keys.json';
+
+// Type Imports:
+import type { KeyInfo } from '3pi/dist/types';
 import type { Request, Response } from 'express';
 import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
-import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, CovalentAPIResponse, CovalentTX } from './types';
+import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, KeyDoc, IpDoc, CovalentAPIResponse, CovalentTX } from './types';
 
 // Initializations:
 const defaultAddress: Address = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const dbPricesCollectionName = 'prices';
+const dbRateLimitsCollectionName = 'rateLimits';
+const dbIpRateLimitsCollectionName = 'ipRateLimits';
 const storageBucketName = 'weaverfi-price-history';
+
+// Valid API Routes:
+const validRoutes: string[] = ['chains', 'projects', 'tokens', 'tokenPrices', 'nativeTokenPrices'];
+const chains: Record<Chain, null> = { eth: null, bsc: null, poly: null, ftm: null, avax: null, cronos: null, op: null, arb: null };
+const validChainRoutes: string[] = ['info', 'projects', 'tokens', 'gas', 'tokenPrices', 'tokenPrice', 'wallet', 'project', 'nfts', 'txs', 'fees', 'tokenPriceHistory'];
+
+/* ========================================================================================================================================================================= */
+
+// Function to validate route:
+export const isValidRoute = (route: string) => {
+  const parts = route.split('/').slice(1);
+  const isValidSimpleEndpoint = validRoutes.includes(parts[0]);
+  if(isValidSimpleEndpoint) {
+    return true;
+  }
+  const isValidChainEndpoint = Object.keys(chains).includes(parts[0]) && validChainRoutes.includes(parts[1]);
+  if(isValidChainEndpoint) {
+    return true;
+  }
+  return false;
+}
 
 /* ========================================================================================================================================================================= */
 
 // Function to send API responses:
 export const sendResponse = (req: Request, res: Response, data: any) => {
   try {
-    let request = req.originalUrl;
-    res.status(200).end(JSON.stringify({ data, request }, null, ' '));
+    res.status(200).end(JSON.stringify(data, null, ' '));
   } catch(err) {
     sendError('internalError', res, err);
   }
@@ -32,6 +58,19 @@ export const sendError = (responseType: ErrorResponseType, res: Response, err?: 
     console.error(err);
   }
   res.status(errorResponses[responseType].status).end(errorResponses[responseType].message);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to log endpoint usage:
+export const logUsage = (req: Request) => {
+  let queryVars = '';
+  Object.keys(req.query).forEach(name => {
+    if(name !== 'key') {
+      queryVars += `, ${name}: ${req.query[name]?.toString()}`;
+    }
+  });
+  console.info(`Loading: ${req.path}${queryVars.length > 0 ? ` (${queryVars.slice(2)})` : ''}`);
 }
 
 /* ========================================================================================================================================================================= */
@@ -69,6 +108,38 @@ export const getFees = async (chain: Chain, wallet: Address) => {
   });
   fees.price = await weaver[chain].getTokenPrice(defaultAddress);
   return fees;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch key doc from database:
+export const fetchKeyDocDB = async (admin: any, keyHash: Hash) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  const keyDoc = await keyDocRef.get();
+  if(keyDoc.exists) {
+    return keyDoc.data() as KeyDoc;
+  } else {
+    return undefined;
+  }
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to set a key doc's value on database:
+export const setKeyDocDB = async (admin: any, keyHash: Hash, data: KeyDoc) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  await keyDocRef.set(data);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to update a key doc on database:
+export const updateKeyDocDB = async (admin: any, keyHash: Hash, data: Partial<KeyDoc>) => {
+  const rateLimitsRef = admin.firestore().collection(dbRateLimitsCollectionName);
+  const keyDocRef = rateLimitsRef.doc(keyHash);
+  await keyDocRef.update(data);
 }
 
 /* ========================================================================================================================================================================= */
@@ -134,6 +205,95 @@ export const fetchTokenPriceHistoryDB = async (admin: any, chain: Chain, address
   let rawFile = await priceHistoryBucket.file(storageFileName).download();
   let file: AggregatedTokenPriceData = JSON.parse(rawFile.toString());
   return file.prices;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to get 3PI key information:
+export const getKeyInfo = async (apiKey: string, contractAddresses: Partial<Record<Chain, Address>>) => {
+  for(const stringChain of Object.keys(contractAddresses)) {
+    const chain = stringChain as Chain;
+    const keyManager = initKeyManager(chain, contractAddresses);
+    if(keyManager) {
+      const keyHash = keyManager.getPublicHash(apiKey);
+      try {
+        const isValidKey = await keyManager.isKeyActive(keyHash);
+        if(isValidKey) {
+          const keyInfo = await keyManager.getKeyInfo(keyHash);
+          const key: KeyInfo & { valid: boolean, hash: Hash } = { ...keyInfo, valid: true, hash: keyHash };
+          return key;
+        }
+      } catch {}
+    }
+  }
+  const invalidKey: { valid: false } = { valid: false };
+  return invalidKey;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to check if free key user is IP rate limited:
+export const isUserRateLimited = async (admin: any, hashedIP: Hash, rateLimit: number, rateLimitTimespanInMs: number) => {
+  const ipDoc = await fetchIpDocDB(admin, hashedIP);
+  if(ipDoc) {
+    if(ipDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
+      await updateIpDocDB(admin, hashedIP, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
+    } else if(ipDoc.queries >= rateLimit) {
+      return true;
+    } else {
+      await updateIpDocDB(admin, hashedIP, { queries: admin.firestore.FieldValue.increment(1) });
+    }
+  } else {
+    await setIpDocDB(admin, hashedIP, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
+  }
+  return false;
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to fetch IP doc from database:
+const fetchIpDocDB = async (admin: any, hashedIP: Hash) => {
+  const ipRateLimitsRef = admin.firestore().collection(dbIpRateLimitsCollectionName);
+  const ipDocRef = ipRateLimitsRef.doc(hashedIP);
+  const ipDoc = await ipDocRef.get();
+  if(ipDoc.exists) {
+    return ipDoc.data() as IpDoc;
+  } else {
+    return undefined;
+  }
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to set an IP doc's value on database:
+const setIpDocDB = async (admin: any, hashedIP: Hash, data: IpDoc) => {
+  const ipRateLimitsRef = admin.firestore().collection(dbIpRateLimitsCollectionName);
+  const ipDocRef = ipRateLimitsRef.doc(hashedIP);
+  await ipDocRef.set(data);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to update an IP doc on database:
+const updateIpDocDB = async (admin: any, hashedIP: Hash, data: Partial<KeyDoc>) => {
+  const ipRateLimitsRef = admin.firestore().collection(dbIpRateLimitsCollectionName);
+  const ipDocRef = ipRateLimitsRef.doc(hashedIP);
+  await ipDocRef.update(data);
+}
+
+/* ========================================================================================================================================================================= */
+
+// Function to initialize key manager for a given chain:
+const initKeyManager = (chain: Chain, contractAddresses: Partial<Record<Chain, Address>>) => {
+  const contractAddress = contractAddresses[chain];
+  if(contractAddress) {
+    const rpcs = weaver[chain].getInfo().rpcs;
+    const keyManager = new KeyManager(contractAddress, rpcs);
+    return keyManager;
+  } else {
+    console.error(`No contract address set for ${chain} chain.`);
+    return undefined;
+  }
 }
 
 /* ========================================================================================================================================================================= */

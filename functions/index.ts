@@ -7,11 +7,12 @@ const swagger = require('swagger-ui-express');
 const functions = require('firebase-functions');
 
 // Imports:
+import { ethers } from 'ethers';
 import weaver from 'weaverfi';
-import { sendResponse, sendError, getTXs, getSimpleTXs, getFees, fetchTokenPricesDB, fetchNativeTokenPricesDB, fetchChainTokenPricesDB, fetchTokenPriceDB, fetchTokenPriceHistoryDB } from './functions';
+import * as fn from './functions';
 
 // Type Imports:
-import type { URL, Address } from 'weaverfi/dist/types';
+import type { Chain, Address, Hash } from 'weaverfi/dist/types';
 import type { Application, Request, Response, NextFunction } from 'express';
 
 // Fetching Swagger Docs Setup JSON File:
@@ -28,50 +29,110 @@ const api: Application = express();
 api.use(cors());
 api.use(express.static('functions/static'));
 
-// Initializations:
-const repository: URL = 'https://github.com/WeaverFi/api';
-const rootResponse = `<title>WeaverFi API</title><p>Click <a href="${repository}">here</a> to see the API's repository, or <a href="/docs">here</a> to see its OpenAPI documentation.</p>`;
-
-// Settings:
+// General Settings:
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
-const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production-only).
+const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production only).
+const rateLimited: boolean = true; // Set this to `true` to rate limit all endpoints with a few exceptions.
 const minInstances = 0; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
 const maxInstances = 100; // Set this to the maximum number of function instances you would like to have (stops excessive scaling during peak usage).
 
-/* ========================================================================================================================================================================= */
+// 3PI Key Management Settings:
+const contractAddresses: Partial<Record<Chain, Address>> = {
+  op: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC',
+  poly: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC'
+}
+const rateLimitTimespanInMs: number = 86400000;
+const newKeyCooldown: boolean = true;
+const freeTierID: number = 0;
+const apiTiers: Record<number, { rateLimit: number }> = {
+  0: { rateLimit: 50 },
+  1: { rateLimit: 500 },
+  2: { rateLimit: 1500 },
+  3: { rateLimit: 4000 }
+}
 
-// Default Endpoint:
-api.get('/', (req: Request, res: Response) => {
-  res.status(200).end(rootResponse);
-});
+/* ========================================================================================================================================================================= */
 
 // Swagger Documentation Endpoint:
 api.use('/docs', swagger.serve, swagger.setup(swaggerDocs));
 
+// Teapot:
+api.get(`/teapot`, async (req: Request, res: Response) => {
+  fn.sendError('teapot', res);
+});
+
 // Logging Middleware:
-api.use((req: Request, res: Response, next: NextFunction) => {
-  if(req.originalUrl != '/service-worker.js') {
-    console.info(`Loading: ${req.originalUrl}`);
+api.use(async (req: Request, res: Response, next: NextFunction) => {
+  if(fn.isValidRoute(req.path)) {
+    if(rateLimited && (process.env.WHITELIST === undefined || (req.headers.origin && !process.env.WHITELIST.split(' ').includes(req.headers.origin)))) {
+      const apiKey = req.query.key;
+      if(apiKey) {
+        if(typeof apiKey === 'string') {
+          const keyInfo = await fn.getKeyInfo(apiKey, contractAddresses);
+          if(keyInfo.valid) {
+            const coolingDown = newKeyCooldown ? Date.now() < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
+            const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
+            if(!localTesting) {
+              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(ethers.utils.base58.decode((req.headers['x-forwarded-for'] as String).split(',')[0])) as Hash : undefined;
+              const ipRateLimitReached = hashedIP ? await fn.isUserRateLimited(admin, hashedIP, rateLimit, rateLimitTimespanInMs) : false;
+              if(!ipRateLimitReached) {
+                const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
+                if(keyDoc) {
+                  if(keyDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
+                    const usageHistory = { timestamp: keyDoc.lastTimestamp, queries: keyDoc.queries };
+                    await fn.updateKeyDocDB(admin, keyInfo.hash, { usage: admin.firestore.FieldValue.arrayUnion(usageHistory), lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
+                    fn.logUsage(req);
+                    next();
+                  } else if(keyDoc.queries >= rateLimit) {
+                    fn.sendError('rateLimited', res);
+                  } else {
+                    await fn.updateKeyDocDB(admin, keyInfo.hash, { queries: admin.firestore.FieldValue.increment(1) });
+                    fn.logUsage(req);
+                    next();
+                  }
+                } else {
+                  await fn.setKeyDocDB(admin, keyInfo.hash, { lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1, usage: [] });
+                  fn.logUsage(req);
+                  next();
+                }
+              } else {
+                fn.sendError('rateLimited', res);
+              }
+            }
+          } else {
+            fn.sendError('invalidAuth', res);
+          }
+        } else {
+          fn.sendError('invalidAuth', res);
+        }
+      } else {
+        fn.sendError('missingAuth', res);
+      }
+    } else {
+      fn.logUsage(req);
+      next();
+    }
+  } else {
+    next();
   }
-  next();
 });
 
 /* ========================================================================================================================================================================= */
 
 // Chain List Endpoint:
 api.get('/chains', (req: Request, res: Response) => {
-  sendResponse(req, res, weaver.getAllChainInfo());
+  fn.sendResponse(req, res, weaver.getAllChainInfo());
 });
 
 // Project List Endpoint:
 api.get('/projects', (req: Request, res: Response) => {
-  sendResponse(req, res, weaver.getAllProjects());
+  fn.sendResponse(req, res, weaver.getAllProjects());
 });
 
 // Token List Endpoint:
 api.get('/tokens', (req: Request, res: Response) => {
-  sendResponse(req, res, weaver.getAllTokens());
+  fn.sendResponse(req, res, weaver.getAllTokens());
 });
 
 /* ========================================================================================================================================================================= */
@@ -80,12 +141,12 @@ api.get('/tokens', (req: Request, res: Response) => {
 api.get('/tokenPrices', async (req: Request, res: Response) => {
   try {
     if(!localTesting && dbPrices) {
-      sendResponse(req, res, await fetchTokenPricesDB(admin));
+      fn.sendResponse(req, res, await fn.fetchTokenPricesDB(admin));
     } else {
-      sendResponse(req, res, await weaver.getAllTokenPrices());
+      fn.sendResponse(req, res, await weaver.getAllTokenPrices());
     }
   } catch(err) {
-    sendError('internalError', res, err);
+    fn.sendError('internalError', res, err);
   }
 });
 
@@ -93,12 +154,12 @@ api.get('/tokenPrices', async (req: Request, res: Response) => {
 api.get('/nativeTokenPrices', async (req: Request, res: Response) => {
   try {
     if(!localTesting && dbPrices) {
-      sendResponse(req, res, await fetchNativeTokenPricesDB(admin));
+      fn.sendResponse(req, res, await fn.fetchNativeTokenPricesDB(admin));
     } else {
-      sendResponse(req, res, await weaver.getNativeTokenPrices());
+      fn.sendResponse(req, res, await weaver.getNativeTokenPrices());
     }
   } catch(err) {
-    sendError('internalError', res, err);
+    fn.sendError('internalError', res, err);
   }
 });
 
@@ -109,34 +170,34 @@ weaver.getAllChains().forEach(chain => {
 
   // Chain Info Endpoint:
   api.get(`/${chain}/info`, (req: Request, res: Response) => {
-    sendResponse(req, res, weaver[chain].getInfo());
+    fn.sendResponse(req, res, weaver[chain].getInfo());
   });
 
   // Project List Endpoint:
   api.get(`/${chain}/projects`, (req: Request, res: Response) => {
-    sendResponse(req, res, weaver[chain].getProjects());
+    fn.sendResponse(req, res, weaver[chain].getProjects());
   });
 
   // Token List Endpoint:
   api.get(`/${chain}/tokens`, (req: Request, res: Response) => {
-    sendResponse(req, res, weaver[chain].getTokens());
+    fn.sendResponse(req, res, weaver[chain].getTokens());
   });
 
   // Gas Estimates Endpoint:
   api.get(`/${chain}/gas`, async (req: Request, res: Response) => {
-    sendResponse(req, res, await weaver[chain].getGasEstimates());
+    fn.sendResponse(req, res, await weaver[chain].getGasEstimates());
   });
 
   // Token Prices Endpoint:
   api.get(`/${chain}/tokenPrices`, async (req: Request, res: Response) => {
     try {
       if(!localTesting && dbPrices) {
-        sendResponse(req, res, await fetchChainTokenPricesDB(admin, chain));
+        fn.sendResponse(req, res, await fn.fetchChainTokenPricesDB(admin, chain));
       } else {
-        sendResponse(req, res, await weaver[chain].getTokenPrices());
+        fn.sendResponse(req, res, await weaver[chain].getTokenPrices());
       }
     } catch(err) {
-      sendError('internalError', res, err);
+      fn.sendError('internalError', res, err);
     }
   });
 
@@ -148,22 +209,22 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(!localTesting && dbPrices) {
-          let tokenPrice = await fetchTokenPriceDB(admin, chain, address);
+          let tokenPrice = await fn.fetchTokenPriceDB(admin, chain, address);
           if(tokenPrice) { tokenInfo.price = tokenPrice; }
         }
         if(tokenInfo.price === 0) {
           if(weaver[chain].isAddress(address as Address)) {
             tokenInfo.price = await weaver[chain].getTokenPrice(address as Address, decimals);
           } else {
-            sendError('invalidAddress', res);
+            fn.sendError('invalidAddress', res);
           }
         }
-        sendResponse(req, res, tokenInfo);
+        fn.sendResponse(req, res, tokenInfo);
       } catch(err) {
-        sendError('internalError', res, err);
+        fn.sendError('internalError', res, err);
       }
     } else {
-      sendError('missingAddress', res);
+      fn.sendError('missingAddress', res);
     }
   });
 
@@ -172,17 +233,17 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
+        if(!localTesting && dbPrices) { await fn.fetchTokenPricesDB(admin); }
         if(weaver[chain].isAddress(address as Address)) {
-          sendResponse(req, res, await weaver[chain].getWalletBalance(address as Address));
+          fn.sendResponse(req, res, await weaver[chain].getWalletBalance(address as Address));
         } else {
-          sendError('invalidAddress', res);
+          fn.sendError('invalidAddress', res);
         }
       } catch(err) {
-        sendError('internalError', res, err);
+        fn.sendError('internalError', res, err);
       }
     } else {
-      sendError('missingAddress', res);
+      fn.sendError('missingAddress', res);
     }
   });
 
@@ -194,23 +255,23 @@ weaver.getAllChains().forEach(chain => {
       if(weaver[chain].getProjects().includes(project)) {
         if(address) {
           try {
-            if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
+            if(!localTesting && dbPrices) { await fn.fetchTokenPricesDB(admin); }
             if(weaver[chain].isAddress(address as Address)) {
-              sendResponse(req, res, await weaver[chain].getProjectBalance(address as Address, project));
+              fn.sendResponse(req, res, await weaver[chain].getProjectBalance(address as Address, project));
             } else {
-              sendError('invalidAddress', res);
+              fn.sendError('invalidAddress', res);
             }
           } catch(err) {
-            sendError('internalError', res, err);
+            fn.sendError('internalError', res, err);
           }
         } else {
-          sendError('missingAddress', res);
+          fn.sendError('missingAddress', res);
         }
       } else {
-        sendError('invalidProject', res);
+        fn.sendError('invalidProject', res);
       }
     } else {
-      sendError('missingProject', res);
+      fn.sendError('missingProject', res);
     }
   });
 
@@ -220,15 +281,15 @@ weaver.getAllChains().forEach(chain => {
     if(address) {
       try {
         if(weaver[chain].isAddress(address as Address)) {
-          sendResponse(req, res, await weaver[chain].getNFTBalance(address as Address));
+          fn.sendResponse(req, res, await weaver[chain].getNFTBalance(address as Address));
         } else {
-          sendError('invalidAddress', res);
+          fn.sendError('invalidAddress', res);
         }
       } catch(err) {
-        sendError('internalError', res, err);
+        fn.sendError('internalError', res, err);
       }
     } else {
-      sendError('missingAddress', res);
+      fn.sendError('missingAddress', res);
     }
   });
 
@@ -241,22 +302,22 @@ weaver.getAllChains().forEach(chain => {
       try {
         if(weaver[chain].isAddress(address as Address)) {
           if(simple === 'true') {
-            sendResponse(req, res, await getSimpleTXs(chain, address as Address));
+            fn.sendResponse(req, res, await fn.getSimpleTXs(chain, address as Address));
           } else {
             if(page !== undefined) {
-              sendResponse(req, res, await getTXs(chain, address as Address, parseInt(page)));
+              fn.sendResponse(req, res, await fn.getTXs(chain, address as Address, parseInt(page)));
             } else {
-              sendResponse(req, res, await getTXs(chain, address as Address));
+              fn.sendResponse(req, res, await fn.getTXs(chain, address as Address));
             }
           }
         } else {
-          sendError('invalidAddress', res);
+          fn.sendError('invalidAddress', res);
         }
       } catch(err) {
-        sendError('internalError', res, err);
+        fn.sendError('internalError', res, err);
       }
     } else {
-      sendError('missingAddress', res);
+      fn.sendError('missingAddress', res);
     }
   });
 
@@ -265,17 +326,17 @@ weaver.getAllChains().forEach(chain => {
     let address = req.query.address as string | undefined;
     if(address) {
       try {
-        if(!localTesting && dbPrices) { await fetchTokenPricesDB(admin); }
+        if(!localTesting && dbPrices) { await fn.fetchTokenPricesDB(admin); }
         if(weaver[chain].isAddress(address as Address)) {
-          sendResponse(req, res, await getFees(chain, address as Address));
+          fn.sendResponse(req, res, await fn.getFees(chain, address as Address));
         } else {
-          sendError('invalidAddress', res);
+          fn.sendError('invalidAddress', res);
         }
       } catch(err) {
-        sendError('internalError', res, err);
+        fn.sendError('internalError', res, err);
       }
     } else {
-      sendError('missingAddress', res);
+      fn.sendError('missingAddress', res);
     }
   });
 
@@ -285,13 +346,13 @@ weaver.getAllChains().forEach(chain => {
       let address = req.query.address as string | undefined;
       if(address) {
         try {
-          let priceHistory = await fetchTokenPriceHistoryDB(admin, chain, address);
-          sendResponse(req, res, { chain, address, priceHistory });
+          let priceHistory = await fn.fetchTokenPriceHistoryDB(admin, chain, address);
+          fn.sendResponse(req, res, { chain, address, priceHistory });
         } catch(err) {
-          sendError('internalError', res, err);
+          fn.sendError('internalError', res, err);
         }
       } else {
-        sendError('missingAddress', res);
+        fn.sendError('missingAddress', res);
       }
     });
   }
@@ -299,16 +360,9 @@ weaver.getAllChains().forEach(chain => {
 
 /* ========================================================================================================================================================================= */
 
-// Teapot:
-api.get(`/teapot`, async (req: Request, res: Response) => {
-  sendError('teapot', res);
-});
-
-/* ========================================================================================================================================================================= */
-
 // 404 Response:
 api.all('*', async (req: Request, res: Response) => {
-  sendError('routeError', res);
+  fn.sendError('routeError', res);
 });
 
 /* ========================================================================================================================================================================= */
