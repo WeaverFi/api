@@ -213,9 +213,16 @@ export const fetchTokenPriceHistoryDB = async (admin: any, chain: Chain, address
 export const getKeyInfo = async (apiKey: string, contractAddresses: Partial<Record<Chain, Address>>) => {
   const keyIsBase58 = /^[A-HJ-NP-Za-km-z1-9]*$/.test(apiKey);
   if(keyIsBase58) {
+    let keyChain: Chain | undefined = undefined;
     for(const stringChain of Object.keys(contractAddresses)) {
-      const chain = stringChain as Chain;
-      const keyManager = initKeyManager(chain, contractAddresses);
+      if(keyChain === undefined) {
+        if(apiKey.slice(0, 2) === stringChain.slice(0, 2)) {
+          keyChain = stringChain as Chain;
+        }
+      }
+    }
+    if(keyChain !== undefined) {
+      const keyManager = initKeyManager(keyChain, contractAddresses);
       if(keyManager) {
         const keyHash = keyManager.getPublicHash(apiKey);
         try {

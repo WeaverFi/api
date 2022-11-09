@@ -40,6 +40,8 @@ This repository is already setup for Firebase hosting, but could easily be adapt
 
 5. Optionally, setup custom rate limits using [3PI](https://github.com/3PIKeys) or change other settings in `functions/index.ts`.
 
-3. To deploy to Firebase, use `firebase deploy`.
+6. To deploy to Firebase, use `firebase deploy`.
+
+Note: The API is currently configured through `getKeyInfo()` in `functions.ts` to only validate keys with a chain identifier appended to it. Modify that function if your implementation is different!
 
 [banner]: /Banner.png "WeaverFi"
