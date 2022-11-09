@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API is the easiest way to interact with the WeaverFi SDK. Find out more on [GitHub](https://github.com/WeaverFi/api), or join our [Discord Server](https://discord.com/invite/DzADcq7y75).",
-    "version": "1.2.11",
+    "version": "1.8.6",
     "title": "WeaverFi API",
     "license": {
       "name": "MIT License",
@@ -40,6 +40,15 @@
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful query.",
@@ -51,7 +60,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -71,6 +80,15 @@
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful query.",
@@ -82,7 +100,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -102,6 +120,15 @@
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful query.",
@@ -113,7 +140,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -150,6 +177,13 @@
               "op",
               "arb"
             ]
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -163,7 +197,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -200,6 +234,13 @@
               "op",
               "arb"
             ]
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -213,7 +254,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -250,6 +291,13 @@
               "op",
               "arb"
             ]
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -263,7 +311,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -283,6 +331,15 @@
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful query.",
@@ -294,7 +351,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -314,6 +371,15 @@
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful query.",
@@ -325,7 +391,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -362,6 +428,13 @@
               "op",
               "arb"
             ]
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -375,7 +448,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -425,6 +498,13 @@
             "in": "query",
             "description": "Token decimals.",
             "type": "integer"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -438,7 +518,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -482,6 +562,13 @@
             "description": "Token address.",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -495,7 +582,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -539,6 +626,13 @@
             "description": "Wallet address.",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -552,7 +646,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -603,6 +697,13 @@
             "description": "Wallet address.",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -616,7 +717,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -672,6 +773,13 @@
             "in": "query",
             "description": "Optional speed variable (Set to `true` to return simpler results).",
             "type": "boolean"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -685,7 +793,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -729,6 +837,13 @@
             "description": "Wallet address.",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -742,7 +857,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -786,6 +901,13 @@
             "description": "Wallet address.",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -799,7 +921,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
@@ -836,6 +958,13 @@
               "op",
               "arb"
             ]
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Your API key.",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -849,7 +978,7 @@
             "description": "Bad request."
           },
           "401": {
-            "description": "Invalid authorization."
+            "description": "Invalid API key."
           },
           "429": {
             "description": "Too many requests (rate limited)."
