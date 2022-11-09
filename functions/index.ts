@@ -3,9 +3,9 @@
 const cors = require('cors');
 const express = require('express');
 const admin = require('firebase-admin');
+const requestIp = require('request-ip');
 const swagger = require('swagger-ui-express');
 const functions = require('firebase-functions');
-const requestIp = require('request-ip');
 
 // Imports:
 import { ethers } from 'ethers';
@@ -76,16 +76,11 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
             const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
             if(!localTesting) {
 
-              // Get client's IP from the request: (not fool-proof, can easily be spoofed or omitted)
-              let clientIp: any = requestIp.getClientIp(req);
-              if(typeof clientIp !== "string") {
-                clientIp = "no-ip"; // Set default if no IP provided
-              }
+              // Getting client's IP & hashing it if using free tier:
+              let clientIp = requestIp.getClientIp(req);
+              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(Buffer.from(typeof clientIp !== 'string' ? 'no-ip' : clientIp)) as Hash : undefined;
 
-              // Hash the IP if using a free tier:
-              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(Buffer.from(clientIp)) as Hash : undefined;
-
-              // Determine if client is rate-limited:
+              // Determining if client is rate-limited:
               const ipRateLimitReached = hashedIP ? await fn.isUserRateLimited(admin, hashedIP, rateLimit, rateLimitTimespanInMs) : false;
               if(!ipRateLimitReached) {
                 const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
@@ -110,6 +105,7 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
               } else {
                 fn.sendError('rateLimited', res);
               }
+
             }
           } else {
             fn.sendError('invalidAuth', res);
