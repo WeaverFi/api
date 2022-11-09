@@ -3,6 +3,7 @@
 const cors = require('cors');
 const express = require('express');
 const admin = require('firebase-admin');
+const requestIp = require('request-ip');
 const swagger = require('swagger-ui-express');
 const functions = require('firebase-functions');
 
@@ -74,7 +75,12 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
             const coolingDown = newKeyCooldown ? Date.now() < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
             const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
             if(!localTesting) {
-              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(ethers.utils.base58.decode((req.headers['x-forwarded-for'] as String).split(',')[0])) as Hash : undefined;
+
+              // Getting client's IP & hashing it if using free tier:
+              let clientIp = requestIp.getClientIp(req);
+              const hashedIP = keyInfo.tierId === freeTierID ? ethers.utils.keccak256(Buffer.from(typeof clientIp !== 'string' ? 'no-ip' : clientIp)) as Hash : undefined;
+
+              // Determining if client is rate-limited:
               const ipRateLimitReached = hashedIP ? await fn.isUserRateLimited(admin, hashedIP, rateLimit, rateLimitTimespanInMs) : false;
               if(!ipRateLimitReached) {
                 const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
@@ -99,6 +105,7 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
               } else {
                 fn.sendError('rateLimited', res);
               }
+
             }
           } else {
             fn.sendError('invalidAuth', res);
