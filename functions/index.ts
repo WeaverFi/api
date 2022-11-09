@@ -47,10 +47,10 @@ const rateLimitTimespanInMs: number = 86400000;
 const newKeyCooldown: boolean = true;
 const freeTierID: number = 0;
 const apiTiers: Record<number, { rateLimit: number }> = {
-  0: { rateLimit: 50 },
-  1: { rateLimit: 500 },
-  2: { rateLimit: 1500 },
-  3: { rateLimit: 4000 }
+  0: { rateLimit: 100 },
+  1: { rateLimit: 1000 },
+  2: { rateLimit: 3000 },
+  3: { rateLimit: 8000 }
 }
 
 /* ========================================================================================================================================================================= */
