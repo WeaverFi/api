@@ -211,19 +211,22 @@ export const fetchTokenPriceHistoryDB = async (admin: any, chain: Chain, address
 
 // Function to get 3PI key information:
 export const getKeyInfo = async (apiKey: string, contractAddresses: Partial<Record<Chain, Address>>) => {
-  for(const stringChain of Object.keys(contractAddresses)) {
-    const chain = stringChain as Chain;
-    const keyManager = initKeyManager(chain, contractAddresses);
-    if(keyManager) {
-      const keyHash = keyManager.getPublicHash(apiKey);
-      try {
-        const isValidKey = await keyManager.isKeyActive(keyHash);
-        if(isValidKey) {
-          const keyInfo = await keyManager.getKeyInfo(keyHash);
-          const key: KeyInfo & { valid: boolean, hash: Hash } = { ...keyInfo, valid: true, hash: keyHash };
-          return key;
-        }
-      } catch {}
+  const keyIsBase58 = /^[A-HJ-NP-Za-km-z1-9]*$/.test(apiKey);
+  if(keyIsBase58) {
+    for(const stringChain of Object.keys(contractAddresses)) {
+      const chain = stringChain as Chain;
+      const keyManager = initKeyManager(chain, contractAddresses);
+      if(keyManager) {
+        const keyHash = keyManager.getPublicHash(apiKey);
+        try {
+          const isValidKey = await keyManager.isKeyActive(keyHash);
+          if(isValidKey) {
+            const keyInfo = await keyManager.getKeyInfo(keyHash);
+            const key: KeyInfo & { valid: boolean, hash: Hash } = { ...keyInfo, valid: true, hash: keyHash };
+            return key;
+          }
+        } catch {}
+      }
     }
   }
   const invalidKey: { valid: false } = { valid: false };
