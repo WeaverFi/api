@@ -12,7 +12,9 @@ The API that powers WeaverFi.
 
 ---
 
-## Documentation
+## API Usage
+
+Learn more about our API and manage your API keys [here](https://api.weaver.fi).
 
 WeaverFi's OpenAPI documentation can be found [here](https://api.weaver.fi/docs).
 
