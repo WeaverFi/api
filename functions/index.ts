@@ -66,7 +66,7 @@ api.get(`/teapot`, async (req: Request, res: Response) => {
 // Logging Middleware:
 api.use(async (req: Request, res: Response, next: NextFunction) => {
   if(fn.isValidRoute(req.path)) {
-    if(rateLimited && (process.env.WHITELIST === undefined || (req.headers.origin && !process.env.WHITELIST.split(' ').includes(req.headers.origin)))) {
+    if(rateLimited && (process.env.WHITELIST === undefined || req.headers.origin === undefined || (req.headers.origin && !process.env.WHITELIST.split(' ').includes(req.headers.origin)))) {
       const apiKey = req.query.key;
       if(apiKey) {
         if(typeof apiKey === 'string') {
