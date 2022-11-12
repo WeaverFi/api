@@ -34,6 +34,7 @@ api.use(express.static('functions/static'));
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
 const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production only).
+const dbKeyCache: boolean = true; // Set this to `true` to fetch cached key info from Firebase (production only).
 const rateLimited: boolean = true; // Set this to `true` to rate limit all endpoints with a few exceptions.
 const minInstances = 0; // Set this to the number of function instances you want to keep warm (decreases spin-up time but increases cost).
 const maxInstances = 100; // Set this to the maximum number of function instances you would like to have (stops excessive scaling during peak usage).
@@ -70,10 +71,11 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
       const apiKey = req.query.key;
       if(apiKey) {
         if(typeof apiKey === 'string') {
-          const keyInfo = await fn.getKeyInfo(apiKey, contractAddresses);
+          const timestampInMs = Date.now();
+          const keyInfo = await fn.getKeyInfo(apiKey, contractAddresses, admin, timestampInMs, { useDB: dbKeyCache });
           if(keyInfo.valid) {
-            const coolingDown = newKeyCooldown ? Date.now() < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
-            const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((Date.now() - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
+            const coolingDown = newKeyCooldown ? timestampInMs < ((keyInfo.startTime * 1000) + rateLimitTimespanInMs) : false;
+            const rateLimit = coolingDown ? apiTiers[keyInfo.tierId].rateLimit * ((timestampInMs - (keyInfo.startTime * 1000)) / rateLimitTimespanInMs) : apiTiers[keyInfo.tierId].rateLimit;
             if(!localTesting) {
 
               // Getting client's IP & hashing it if using free tier:
@@ -85,7 +87,7 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
               if(!ipRateLimitReached) {
                 const keyDoc = await fn.fetchKeyDocDB(admin, keyInfo.hash);
                 if(keyDoc) {
-                  if(keyDoc.lastTimestamp.toMillis() < (Date.now() - rateLimitTimespanInMs)) {
+                  if(keyDoc.lastTimestamp.toMillis() < (timestampInMs - rateLimitTimespanInMs)) {
                     const usageHistory = { timestamp: keyDoc.lastTimestamp, queries: keyDoc.queries };
                     await fn.updateKeyDocDB(admin, keyInfo.hash, { usage: admin.firestore.FieldValue.arrayUnion(usageHistory), lastTimestamp: admin.firestore.FieldValue.serverTimestamp(), queries: 1 });
                     fn.logUsage(req);
