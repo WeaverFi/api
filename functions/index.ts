@@ -32,7 +32,7 @@ api.use(express.static('functions/static'));
 
 // General Settings:
 const localTesting: boolean = false; // Set this to `true` to test the API locally instead of deploying it.
-const localTestingPort: number = 3000; // This is the port used to locally host the API during testing.
+const localTestingPort: number = 3_000; // This is the port used to locally host the API during testing.
 const dbPrices: boolean = true; // Set this to `true` to fetch token prices from Firebase (production only).
 const dbKeyCache: boolean = true; // Set this to `true` to fetch cached key info from Firebase (production only).
 const rateLimited: boolean = true; // Set this to `true` to rate limit all endpoints with a few exceptions.
@@ -44,14 +44,14 @@ const contractAddresses: Partial<Record<Chain, Address>> = {
   op: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC',
   poly: '0xF50D1cAF40E1dE56198F262ACA4A3745De0A88dC'
 }
-const rateLimitTimespanInMs: number = 86400000;
+const rateLimitTimespanInMs: number = 86_400_000;
 const newKeyCooldown: boolean = true;
 const freeTierID: number = 0;
 const apiTiers: Record<number, { rateLimit: number }> = {
   0: { rateLimit: 100 },
-  1: { rateLimit: 1000 },
-  2: { rateLimit: 3000 },
-  3: { rateLimit: 8000 }
+  1: { rateLimit: 1_000 },
+  2: { rateLimit: 3_000 },
+  3: { rateLimit: 8_000 }
 }
 
 /* ========================================================================================================================================================================= */
