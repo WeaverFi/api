@@ -5,7 +5,7 @@ import type { Address, Hash, Chain, URL } from 'weaverfi/dist/types';
 /* ========================================================================================================================================================================= */
 
 // Error Types:
-export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProject' | 'invalidAddress' | 'invalidProject' | 'missingAuth' | 'invalidAuth' | 'teapot' | 'rateLimited' | 'internalError';
+export type ErrorResponseType = 'routeError' | 'missingAddress' | 'missingProject' | 'invalidAddress' | 'invalidProject' | 'missingAuth' | 'invalidAuth' | 'teapot' | 'rateLimited' | 'rateLimitedRampingUp' | 'internalError';
 
 // Transaction Types:
 export type TXType = 'transfer' | 'approve' | 'revoke';

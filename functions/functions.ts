@@ -602,6 +602,10 @@ const errorResponses: Record<ErrorResponseType, { status: number, message: strin
     status: 429,
     message: `Too many requests.`
   },
+  rateLimitedRampingUp: {
+    status: 429,
+    message: `Too many requests. (your API key's rate limit is still ramping up)`
+  },
   internalError: {
     status: 500,
     message: `Internal API error.`

@@ -93,7 +93,11 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
                     fn.logUsage(req);
                     next();
                   } else if(keyDoc.queries >= rateLimit) {
-                    fn.sendError('rateLimited', res);
+                    if(coolingDown) {
+                      fn.sendError('rateLimitedRampingUp', res);
+                    } else {
+                      fn.sendError('rateLimited', res);
+                    }
                   } else {
                     await fn.updateKeyDocDB(admin, keyInfo.hash, { queries: admin.firestore.FieldValue.increment(1) });
                     fn.logUsage(req);
@@ -105,7 +109,11 @@ api.use(async (req: Request, res: Response, next: NextFunction) => {
                   next();
                 }
               } else {
-                fn.sendError('rateLimited', res);
+                if(coolingDown) {
+                  fn.sendError('rateLimitedRampingUp', res);
+                } else {
+                  fn.sendError('rateLimited', res);
+                }
               }
 
             }
