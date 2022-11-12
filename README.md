@@ -26,19 +26,21 @@ Contribution guidelines can be found [here](CONTRIBUTING.md).
 
 ---
 
-## Self-Hosting
+## Firebase Deployment
 
 This repository is already setup for Firebase hosting, but could easily be adapted to be deployed on any other cloud deployment service.
 
-1. Add your own API keys in `functions/keys.json` (an example file is provided).
+Currently the API also uses many other cloud functions to manage token prices, API key caching, etc. but those can be easily disabled.
+
+1. Add any required keys in `keys.json` (an example file is provided).
 
 2. Install dependencies by navigating to the `functions` folder and using `npm i`.
 
 3. Add your project ID in `.firebaserc` (an example file is provided).
 
-4. Optionally, whitelist any origins to be exempt from rate limits in `functions/.env` (an example file is provided).
+4. Change any settings to your liking in `index.ts`.
 
-5. Optionally, setup custom rate limits using [3PI](https://github.com/3PIKeys) or change other settings in `functions/index.ts`.
+5. Optionally, whitelist any origins to be exempt from rate limits in `.env` (an example file is provided).
 
 6. To deploy to Firebase, use `firebase deploy`.
 
