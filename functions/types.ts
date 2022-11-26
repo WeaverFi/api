@@ -1,6 +1,6 @@
 
 // Importing WeaverFi SDK Types:
-import type { Address, Hash, Chain, URL } from 'weaverfi/dist/types';
+import type { Address, Hash, Chain, URL } from 'weaverfi';
 
 /* ========================================================================================================================================================================= */
 

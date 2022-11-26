@@ -13,7 +13,7 @@ import weaver from 'weaverfi';
 import * as fn from './functions';
 
 // Type Imports:
-import type { Chain, Address, Hash } from 'weaverfi/dist/types';
+import type { Chain, Address, Hash } from 'weaverfi';
 import type { Application, Request, Response, NextFunction } from 'express';
 
 // Fetching Swagger Docs Setup JSON File:

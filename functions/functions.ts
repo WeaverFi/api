@@ -6,9 +6,9 @@ import weaver from 'weaverfi';
 import keys from './keys.json';
 
 // Type Imports:
-import type { KeyInfo } from '3pi/dist/types';
+import type { KeyInfo } from '3pi';
 import type { Request, Response } from 'express';
-import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi/dist/types';
+import type { Address, Chain, Hash, TokenPriceData } from 'weaverfi';
 import type { ErrorResponseType, AggregatedTokenPriceData, TransferTX, ApprovalTX, SimpleTX, TXToken, KeyDoc, IpDoc, CovalentAPIResponse, CovalentTX } from './types';
 
 // Initializations:
