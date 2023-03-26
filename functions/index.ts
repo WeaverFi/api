@@ -19,9 +19,6 @@ import type { Application, Request, Response, NextFunction } from 'express';
 // Fetching Swagger Docs Setup JSON File:
 const swaggerDocs: JSON = require('../static/swagger.json');
 
-// Fetching Firebase Logger Compatibility Patch:
-require("firebase-functions/lib/logger/compat");
-
 // Initializing Firebase App:
 admin.initializeApp();
 
@@ -229,7 +226,7 @@ weaver.getAllChains().forEach(chain => {
           let tokenPrice = await fn.fetchTokenPriceDB(admin, chain, address);
           if(tokenPrice) { tokenInfo.price = tokenPrice; }
         }
-        if(tokenInfo.price === 0) {
+        if(tokenInfo.price === 0 && decimals !== undefined) {
           if(weaver[chain].isAddress(address as Address)) {
             tokenInfo.price = await weaver[chain].getTokenPrice(address as Address, decimals);
           } else {
@@ -299,53 +296,6 @@ weaver.getAllChains().forEach(chain => {
       try {
         if(weaver[chain].isAddress(address as Address)) {
           fn.sendResponse(req, res, await weaver[chain].getNFTBalance(address as Address));
-        } else {
-          fn.sendError('invalidAddress', res);
-        }
-      } catch(err) {
-        fn.sendError('internalError', res, err);
-      }
-    } else {
-      fn.sendError('missingAddress', res);
-    }
-  });
-
-  // Transaction History Endpoint:
-  api.get(`/${chain}/txs`, async (req: Request, res: Response) => {
-    let address = req.query.address as string | undefined;
-    let page = req.query.page as string | undefined;
-    let simple = req.query.simple as string | undefined;
-    if(address) {
-      try {
-        if(weaver[chain].isAddress(address as Address)) {
-          if(simple === 'true') {
-            fn.sendResponse(req, res, await fn.getSimpleTXs(chain, address as Address));
-          } else {
-            if(page !== undefined) {
-              fn.sendResponse(req, res, await fn.getTXs(chain, address as Address, parseInt(page)));
-            } else {
-              fn.sendResponse(req, res, await fn.getTXs(chain, address as Address));
-            }
-          }
-        } else {
-          fn.sendError('invalidAddress', res);
-        }
-      } catch(err) {
-        fn.sendError('internalError', res, err);
-      }
-    } else {
-      fn.sendError('missingAddress', res);
-    }
-  });
-
-  // Transaction Fees Endpoint:
-  api.get(`/${chain}/fees`, async (req: Request, res: Response) => {
-    let address = req.query.address as string | undefined;
-    if(address) {
-      try {
-        if(!localTesting && dbPrices) { await fn.fetchTokenPricesDB(admin); }
-        if(weaver[chain].isAddress(address as Address)) {
-          fn.sendResponse(req, res, await fn.getFees(chain, address as Address));
         } else {
           fn.sendError('invalidAddress', res);
         }

@@ -32,17 +32,15 @@ This repository is already setup for Firebase hosting, but could easily be adapt
 
 Currently the API also uses many other cloud functions to manage token prices, API key caching, etc. but those can be easily disabled.
 
-1. Add any required keys in `keys.json` (an example file is provided).
+1. Install dependencies by navigating to the `functions` folder and using `npm i`.
 
-2. Install dependencies by navigating to the `functions` folder and using `npm i`.
+2. Add your project ID in `.firebaserc` (an example file is provided).
 
-3. Add your project ID in `.firebaserc` (an example file is provided).
+3. Change any settings to your liking in `index.ts`.
 
-4. Change any settings to your liking in `index.ts`.
+4. Optionally, whitelist any origins to be exempt from rate limits in `.env` (an example file is provided).
 
-5. Optionally, whitelist any origins to be exempt from rate limits in `.env` (an example file is provided).
-
-6. To deploy to Firebase, use `firebase deploy`.
+5. To deploy to Firebase, use `firebase deploy`.
 
 Note: The API is currently configured through `getKeyInfo()` in `functions.ts` to only validate keys with a chain identifier appended to it. Modify that function if your implementation is different!
 
